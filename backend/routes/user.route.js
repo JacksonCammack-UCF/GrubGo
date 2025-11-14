@@ -15,4 +15,7 @@ router.post("/login", doLogin);
 // Signup
 router.post("/signup", doSignup);
 
+// UPDATE CART
+router.post("/cart/:id", updateCart);
+
 export default router;
