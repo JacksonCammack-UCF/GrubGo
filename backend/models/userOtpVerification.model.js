@@ -17,6 +17,7 @@ const userOTPVerificationSchema = new mongoose.Schema({
   expiresAt: {
     type: Date,
     required: true,
+    index: { expireAfterSeconds: 0 }
   },
   purpose: {
     type: String,
@@ -24,7 +25,14 @@ const userOTPVerificationSchema = new mongoose.Schema({
     default: "EMAIL_VERIFICATION",
     required: true,
   },
+  attempts: {
+    type: Number,
+    required: false,
+    default: 0,
+  },
 });
+
+userOTPVerificationSchema.index({ userId: 1, purpose: 1 });
 
 const UserOTPVerification = mongoose.model(
   "UserOTPVerification",

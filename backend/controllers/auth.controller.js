@@ -7,10 +7,48 @@ import { hashData, verifyHashedData } from "../utils/hashData.js";
 import { sendEmail } from "../utils/sendEmail.js";
 
 const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const MAX_OTP_ATTEMPTS = 5;
+
+const { JWT_SECRET } = process.env;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required");
+}
+
+const validateOtpRecord = async ({ record, plainOtp }) => {
+  if (!record) {
+    throw new Error("OTP record not found. Please request a new code.");
+  }
+
+  const attempts = record.attempts ?? 0;
+  // Too many failed attempts → lock this OTP
+  if (attempts >= MAX_OTP_ATTEMPTS) {
+    throw new Error("Too many incorrect attempts. Please request a new OTP.");
+  }
+
+  const isMatch = await verifyHashedData(plainOtp, record.otp);
+
+  if (!isMatch) {
+    record.attempts = attempts + 1;
+    await record.save();
+    throw new Error("Invalid OTP. Please check your inbox and try again.");
+  }
+
+  // If we get here, OTP is valid and attempts stay as-is
+};
 
 // 1. Generic OTP sender used by signup, login, password reset
 export const sendOTPVerificationEmail = async ({ _id, email, purpose = "EMAIL_VERIFICATION" }) => {
   try {
+    const now = Date.now();
+    const windowStart = now - OTP_TTL_MS; // 10-minute window
+
+    // Check how many OTPs have been sent in the last 10 minutes
+    const recentOtpCount = await UserOTPVerification.countDocuments({userId: _id, purpose, createdAt: { $gte: windowStart }});
+    // Limit to 3 OTPs per 10 minutes
+    if (recentOtpCount >= 3) {
+      throw new Error("Too many OTP requests. Please try again later.");
+    }
+
     const otp = await generateOTP();
     const hashedOTP = await hashData(otp);
 
@@ -21,6 +59,7 @@ export const sendOTPVerificationEmail = async ({ _id, email, purpose = "EMAIL_VE
       expiresAt: Date.now() + OTP_TTL_MS,
       purpose,
     });
+
     await otpRecord.save();
 
     let subject = "Verify Your Email Address";
@@ -45,6 +84,7 @@ export const sendOTPVerificationEmail = async ({ _id, email, purpose = "EMAIL_VE
       <h3>${intro} <b>${otp}</b></h3>
       <p>${actionLine}</p>
       <p>This OTP is valid for ${OTP_TTL_MS / 60000} minutes.</p>
+      <p style="color: #b22222; font-weight: bold;">Never share this code with anyone. GrubGo will never ask for this code.</p>
     `;
 
     await sendEmail({ to: email, subject, html });
@@ -62,43 +102,38 @@ export const verifyEmailOTP = async ({ userId, otp }) => {
       throw new Error("Empty OTP details are not allowed!");
     }
 
-    const records = await UserOTPVerification.find({
-      userId,
-      purpose: "EMAIL_VERIFICATION",
-    });
+    const record = await UserOTPVerification.findOne({userId, purpose: "EMAIL_VERIFICATION"}).sort({createdAt: -1});
 
-    if (!records.length) {
-      throw new Error(
-        "Account record doesn't exist or has been verified already. Please request again."
-      );
+    if (!record) {
+      throw new Error("Account record doesn't exist or has been verified already. Please request again.");
     }
 
-    const { expiresAt, otp: hashedOTP } = records[0];
-
-    if (expiresAt < Date.now()) {
-      await UserOTPVerification.deleteMany({
-        userId,
-        purpose: "EMAIL_VERIFICATION",
-      });
-      throw new Error("OTP has expired. Please request a new one.");
+    if (record.expiresAt < Date.now()) {
+      await UserOTPVerification.deleteMany({userId, purpose: "EMAIL_VERIFICATION"});
+      const user = await User.findById(userId).select("email");
+      if (!user) {
+        throw new Error("User not found for resending OTP.");
+      }
+      const emailData = await sendOTPVerificationEmail({_id: userId, email: user.email, purpose: "EMAIL_VERIFICATION"});
+      return { status: "RESEND", message: "OTP has expired. A new OTP has been sent to your email.", data: emailData };
     }
 
-    const isMatch = await verifyHashedData(otp, hashedOTP);
-    if (!isMatch) {
-      throw new Error(
-        "Invalid OTP. Please check your inbox and try again."
-      );
+    if(record.attempts >= MAX_OTP_ATTEMPTS){
+      await UserOTPVerification.deleteMany({userId, purpose: "EMAIL_VERIFICATION"});
+      const user = await User.findById(userId).select("email");
+      if (!user) {
+        throw new Error("User not found for resending OTP.");
+      }
+      const emailData = await sendOTPVerificationEmail({_id: userId, email: user.email, purpose: "EMAIL_VERIFICATION"});
+      return { status: "RESEND", message: "Too many incorrect attempts. A new OTP has been sent to your email.", data: emailData };
     }
-
+    await validateOtpRecord({ record: record, plainOtp: otp });
     await User.updateOne({ _id: userId }, { isEmailVerified: true });
-    await UserOTPVerification.deleteMany({
-      userId,
-      purpose: "EMAIL_VERIFICATION",
-    });
-
+    await UserOTPVerification.deleteMany({userId, purpose: "EMAIL_VERIFICATION"});
+    
     return { message: "Email OTP verified successfully!" };
   } catch (error) {
-    throw new Error(error.message);
+    throw error instanceof Error ? error : new Error(String(error));
   }
 };
 
@@ -109,38 +144,32 @@ export const verify2FAOTP = async ({ userId, otp }) => {
       throw new Error("Empty OTP details are not allowed!");
     }
 
-    const records = await UserOTPVerification.find({
-      userId,
-      purpose: "TWO_FACTOR_AUTH",
-    });
-
-    if (!records.length) {
-      throw new Error(
-        "Account record doesn't exist or has been verified already. Please request again."
-      );
+    const record = await UserOTPVerification.findOne({userId,purpose: "TWO_FACTOR_AUTH"}).sort({createdAt: -1});
+    if (!record) {
+      throw new Error( "Account record doesn't exist or has been verified already. Please request again." );
     }
 
-    const { expiresAt, otp: hashedOTP } = records[0];
-
-    if (expiresAt < Date.now()) {
-      await UserOTPVerification.deleteMany({
-        userId,
-        purpose: "TWO_FACTOR_AUTH",
-      });
-      throw new Error("OTP has expired. Please request a new one.");
+    if (record.expiresAt < Date.now()) {
+      await UserOTPVerification.deleteMany({ userId, purpose: "TWO_FACTOR_AUTH" });
+      const user = await User.findById(userId).select("email");
+      if (!user) {
+        throw new Error("User not found for resending OTP.");
+      }
+      const emailData = await sendOTPVerificationEmail({_id: userId, email: user.email, purpose: "TWO_FACTOR_AUTH"});
+      return { status: "RESEND", message: "OTP has expired. A new OTP has been sent to your email.", data: emailData };
     }
 
-    const isMatch = await verifyHashedData(otp, hashedOTP);
-    if (!isMatch) {
-      throw new Error(
-        "Invalid OTP. Please check your inbox and try again."
-      );
+    if(record.attempts >= MAX_OTP_ATTEMPTS){
+      await UserOTPVerification.deleteMany({userId, purpose: "TWO_FACTOR_AUTH"});
+      const user = await User.findById(userId).select("email");
+      if (!user) {
+        throw new Error("User not found for resending OTP.");
+      }      
+      const emailData = await sendOTPVerificationEmail({_id: userId, email: user.email, purpose: "TWO_FACTOR_AUTH"});
+      return { status: "RESEND", message: "Too many incorrect attempts. A new OTP has been sent to your email.", data: emailData };
     }
-
-    await UserOTPVerification.deleteMany({
-      userId,
-      purpose: "TWO_FACTOR_AUTH",
-    });
+    await validateOtpRecord({ record: record, plainOtp: otp });
+    await UserOTPVerification.deleteMany({ userId, purpose: "TWO_FACTOR_AUTH"});
 
     const user = await User.findById(userId).select("-password");
     if (!user) {
@@ -149,7 +178,7 @@ export const verify2FAOTP = async ({ userId, otp }) => {
 
     return { message: "2FA OTP verified successfully!", data: user };
   } catch (error) {
-    throw new Error(error.message);
+    throw error instanceof Error ? error : new Error(String(error));
   }
 };
 
@@ -161,23 +190,14 @@ export const requestPasswordResetOTP = async ({ email }) => {
     }
 
     const user = await User.findOne({ email });
-    if (!user) {
-      throw new Error("User with given email doesn't exist!");
+    if (user) {
+      await sendOTPVerificationEmail({_id: user._id, email: user.email, purpose: "PASSWORD_RESET"});
     }
 
-    await sendOTPVerificationEmail({
-      _id: user._id,
-      email: user.email,
-      purpose: "PASSWORD_RESET",
-    });
-
-    return {
-      userId: user._id,
-      email: user.email,
-      purpose: "PASSWORD_RESET",
-    };
+    // Always return a generic response to prevent user enumeration
+    return { message: "If an account with that email exists, a password reset code has been sent." };
   } catch (error) {
-    throw new Error(error.message);
+    throw error instanceof Error ? error : new Error(String(error));
   }
 };
 
@@ -188,51 +208,39 @@ export const verifyPasswordResetOTP = async ({ userId, otp }) => {
       throw new Error("Empty OTP details are not allowed!");
     }
 
-    const records = await UserOTPVerification.find({
-      userId,
-      purpose: "PASSWORD_RESET",
-    });
+    const record = await UserOTPVerification.findOne({userId, purpose: "PASSWORD_RESET"}).sort({createdAt: -1});
 
-    if (!records.length) {
-      throw new Error(
-        "Account record doesn't exist or no reset request found or it has already been used. Please request a new password reset."
-      );
+    if (!record) {
+      throw new Error("Account record doesn't exist or no reset request found or it has already been used. Please request a new password reset.");
+    }
+    if (record.expiresAt < Date.now()) {
+      await UserOTPVerification.deleteMany({userId, purpose: "PASSWORD_RESET"});
+      const user = await User.findById(userId).select("email");
+      if (!user) {
+        throw new Error("User not found for resending OTP.");
+      }
+      const emailData = await sendOTPVerificationEmail({_id: userId, email: user.email, purpose: "PASSWORD_RESET"});
+      return { status: "RESEND", message: "OTP has expired. A new OTP has been sent to your email.", data: emailData };
     }
 
-    const { expiresAt, otp: hashedOTP } = records[0];
-
-    if (expiresAt < Date.now()) {
-      await UserOTPVerification.deleteMany({
-        userId,
-        purpose: "PASSWORD_RESET",
-      });
-      throw new Error("OTP has expired. Please request a new one.");
+    if(record.attempts >= MAX_OTP_ATTEMPTS){
+      await UserOTPVerification.deleteMany({userId, purpose: "PASSWORD_RESET"});
+      const user = await User.findById(userId).select("email");
+      if (!user) {
+        throw new Error("User not found for resending OTP.");
+      }      
+      const emailData = await sendOTPVerificationEmail({_id: userId, email: user.email, purpose: "PASSWORD_RESET"});
+      return { status: "RESEND", message: "Too many incorrect attempts. A new OTP has been sent to your email.", data: emailData };
     }
+    await validateOtpRecord({ record: record, plainOtp: otp });
 
-    const isMatch = await verifyHashedData(otp, hashedOTP);
-    if (!isMatch) {
-      throw new Error(
-        "Invalid OTP. Please check your inbox and try again."
-      );
-    }
+    const resetToken = jwt.sign({ userId }, JWT_SECRET, { expiresIn: "10m" });
 
-    const resetToken = jwt.sign(
-      { userId },
-      process.env.JWT_SECRET,
-      { expiresIn: "10m" }
-    );
+    await UserOTPVerification.deleteMany({userId, purpose: "PASSWORD_RESET"});
 
-    await UserOTPVerification.deleteMany({
-      userId,
-      purpose: "PASSWORD_RESET",
-    });
-
-    return {
-      message: "Password-reset OTP verified successfully!",
-      password_reset_token: resetToken,
-    };
+    return { message: "Password-reset OTP verified successfully!", password_reset_token: resetToken };
   } catch (error) {
-    throw new Error(error.message);
+    throw error instanceof Error ? error : new Error(String(error));
   }
 };
 
@@ -250,7 +258,7 @@ export const resetPassword = async ({ password_reset_token, newPassword }) => {
 
     let payload;
     try {
-      payload = jwt.verify(password_reset_token, process.env.JWT_SECRET);
+      payload = jwt.verify(password_reset_token, JWT_SECRET);
     } catch (error) {
       throw new Error("Invalid or expired password reset token!");
     }
@@ -262,6 +270,6 @@ export const resetPassword = async ({ password_reset_token, newPassword }) => {
 
     return { message: "Password reset successfully!" };
   } catch (error) {
-    throw new Error(error.message);
+    throw error instanceof Error ? error : new Error(String(error));
   }
 };

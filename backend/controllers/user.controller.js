@@ -49,7 +49,7 @@ export const doSignup = async (req, res) => {
     }
 
     // Simple validations (can tweak)
-    if (!/^\+?\d{10}$/.test(phone)) {
+    if (!/^\+?\d{10,}$/.test(phone)) {
       return res.status(400).json({ success: false, message: "Invalid phone number format. Please enter at least 10 digits." });
     }
 
@@ -147,10 +147,7 @@ export const doLogin = async (req, res) => {
         purpose: "EMAIL_VERIFICATION",
       });
 
-      return res.status(200).json({ 
-        success: true, 
-        status: "PENDING", message: "Email not verified. A new verification code has been sent to your email.", 
-        data: emailData 
+      return res.status(200).json({  success: true, status: "PENDING", message: "Email not verified. A new verification code has been sent to your email.", data: emailData 
       });
     }
 

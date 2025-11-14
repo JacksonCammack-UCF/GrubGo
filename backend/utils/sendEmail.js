@@ -1,14 +1,20 @@
 import dotenv from "dotenv";
-dotenv.config(); 
-
 import Mailjet from "node-mailjet";
 
-const mailjet = Mailjet.apiConnect(
-  process.env.MJ_APIKEY_PUBLIC,
-  process.env.MJ_APIKEY_PRIVATE
-);
+dotenv.config(); 
+
+const { MJ_APIKEY_PRIVATE, MJ_APIKEY_PUBLIC, MJ_SENDER_EMAIL } = process.env;
+
+if (!MJ_APIKEY_PUBLIC || !MJ_APIKEY_PRIVATE || !MJ_SENDER_EMAIL) {
+  throw new Error("Mailjet API keys or sender email are not set in environment variables.");
+}
+
+const mailjet = Mailjet.apiConnect(MJ_APIKEY_PUBLIC, MJ_APIKEY_PRIVATE);
 
 export const sendEmail = async ({ to, subject, html }) => {
+  if (!to || typeof to !== "string" || !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(to)){
+      throw new Error("Invalid email address");
+  }
   try {
     const response = await mailjet
       .post("send", { version: "v3.1" })
@@ -16,7 +22,7 @@ export const sendEmail = async ({ to, subject, html }) => {
         Messages: [
           {
             From: {
-              Email: process.env.MJ_SENDER_EMAIL,
+              Email: MJ_SENDER_EMAIL,
               Name: "GrubGo",
             },
             To: [{ Email: to }],
@@ -28,7 +34,7 @@ export const sendEmail = async ({ to, subject, html }) => {
 
     return response;
   } catch (error) {
-    console.error(error);
+    console.error("Mailjet error:", error);
     throw new Error("Error sending email: " + error.message);
   }
 };
