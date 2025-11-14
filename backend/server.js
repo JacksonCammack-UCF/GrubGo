@@ -3,16 +3,19 @@ import cors from "cors";
 import foodRoutes from "./routes/food.route.js";
 import userRoutes from "./routes/user.route.js";
 import orderRoutes from "./routes/order.route.js";
+import authRoutes from "./routes/auth.route.js";
 import { connectDB } from "./config/db.js";
 
 
 const app = express();
 app.use(cors());
-
 app.use(express.json()); // allows us to accept json data in body, PARSE!
 
 // Modify Users
 app.use("/api/users", userRoutes);
+
+// Auth / OTP
+app.use("/api/auth", authRoutes);
 
 // Call the Admin change products ITS ALL UNDER ROUTE
 app.use("/api/foods", foodRoutes);
