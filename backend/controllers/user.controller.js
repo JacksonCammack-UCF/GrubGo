@@ -102,4 +102,42 @@ export const doSignup = async (req, res) => {
     }
 }
 
+// UPDATE CART
+export const updateCart = async (req, res) =>{
+    const {id} = req.params
+    const { foodId, quantity } = req.body;
+
+    try {
+        if (quantity === 0) {
+            await User.updateOne(
+                { _id: id },
+                { $pull: { cart: { foodId } } } // remove any matching foodId
+            );
+            return res.status(200).json({ message: 'Item removed from cart' });
+        }
+
+    // Try to update quantity if item already exists
+        const result = await User.updateOne(
+            { _id: id, 'cart.foodId': foodId },
+            { $set: { 'cart.$.quantity': quantity } }
+        );
+
+    if (result.matchedCount === 0) {
+      // Item not found → push new item
+      await User.updateOne(
+        { _id: id },
+        { $push: { cart: { foodId, quantity } } }
+      );
+      return res.status(200).json({ message: 'Item added to cart' });
+    }
+
+    res.status(200).json({ message: 'Cart updated successfully' });
+
+    } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: 'Failed to update cart' });
+    }
+  
+
+}
 
