@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 import User from "../models/user.model.js";
 
 
@@ -36,69 +37,106 @@ export const deleteUser = async(req, res) =>{
 
 // LOGIN
 export const doLogin = async (req, res) =>{
+  try {
+    const { email, username, identifier, password } = req.body;
 
-    const { email, password } = req.body;
-    if(!email || !password){ // Check all requirements
-        return res.status(400).json({success:false, message: "Please fill in all sections."});
+    const loginField = email || username || identifier;
+
+    // Basic checks
+    if (!loginField || !password) {
+      return res.status(400).json({success: false,message: "Please fill in all sections."});
     }
-  
-    try {
-        const login = await User.find({email:email, password:password});
-        console.log({login});
 
-        if (login.length == 0){ // check if info matches database
-            return res.status(400).json({success:false, message: "Email / Password incorrect."});
-        }
-
-        res.status(200).json({success: true, data: login, message: "Success, Logged In!" })
-    
-    } catch (error) {
-        console.log("error in fetching the products: ", error.message);
-        res.status(500).json({success: false, message: "Server Error"})
-        
+    // Mongo query
+    let query = {};
+    if (email) {
+      query.email = email;
+    } else if (username) {
+      query.username = username;
+    } else if (identifier) {
+      query.identifier = identifier;
+      query = {$or: [{ email: identifier }, { username: identifier }]};
     }
+
+    // Find user by email or username
+    const user = await User.findOne(query);
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Email / Username or Password incorrect." });
+    }
+
+    // Compare password with bcrypt
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Email / Username or Password incorrect." });
+    }
+
+    // Remove password before sending to client
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    return res.status(200).json({success: true, data: userObj, message: "Success, Logged In!"});
+  } catch (error) {
+    console.log("Error in doLogin:", error.message);
+    return res.status(500).json({ success: false, message: "Server Error during login." });
+  }
 }
 
 // SIGN UP
 export const doSignup = async (req, res) => {
-    
-    function isValidEmail(email){
-        return (email.includes('@') && email.includes('.'));
-    }
-    const user = req.body;
+    try {
+        const { email, username, password, firstName, lastName, phone } = req.body;
 
-    if(!user.email || !user.username || !user.password || !user.firstName || user.LastName || !user.phone){ // Check all requirements
-        return res.status(400).json({success:false, message: "Please fill in all sections."});
-    }
-    console.log(user);
-
-    // check if valid email
-    if(!isValidEmail(user.email)){
-        return res.status(400).json({success:false, message: "Not a valid email."});
-    }
-
-    // check if email already exists in database
-    const emailCheck = await User.find({email: user.email});
-    if (emailCheck.length != 0){
-            return res.status(400).json({success:false, message: "Email already used."});
+        // Basic required field checks
+        if (!email || !username || !password || !firstName || !lastName || !phone) {
+            return res.status(400).json({ success: false, message: "Please fill in all sections." });
         }
 
-    // INITIALIZE CART AND POINTS
-    user.points = 200;
-    user.cart = [];
-    console.log(user);
+        // Email regex (simple but stronger than just '@' + '.')
+        const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ success: false, message: "Not a valid email. Please enter a valid email address." });
+        }
 
-    const newUser = new User(user) // Create new user
-    console.log(newUser);
+        // Phone check: here using 10 digits; adjust if needed
+        const phoneRegex = /^\+?\d{10}$/;
+        if (!phoneRegex.test(phone)) {
+            return res.status(400).json({ success: false, message: "Not a valid phone number. Please enter a 10-digit number." });
+        }
 
-    try {
-        // IMPLEMENT WITH DATABASE
+        // Password length
+        if (password.length < 8) {
+            return res.status(400).json({success: false,message: "Password must be at least 8 characters long."});
+        }
+
+        // Check if email already exists
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) {
+            return res.status(400).json({ success: false, message: "Email already used." });
+        }
+
+        // Check if username already exists
+        const existingUsername = await User.findOne({ username });
+        if (existingUsername) {
+            return res.status(400).json({ success: false, message: "Username already used." });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const userData = {
+            email,
+            username,
+            password: hashedPassword,
+            firstName,
+            lastName,
+            phone
+        };
+        const newUser = new User(userData);
         await newUser.save();
-        res.status(200).json({success: "true", data: newUser});
+        return res.status(200).json({ success: true, data: newUser, message: "User created." });
     } catch (error) {
-        console.error("Error in Create product:", error.message)
-        res.status(500).json({success: "false", message: "Server Error"});
-        
+        console.error("Error in doSignup:", error.message);
+        return res.status(500).json({ success: false, message: "Server Error during signup." });
     }
 }
 
