@@ -3,11 +3,15 @@ import mongoose from 'mongoose';
 const userSchema = new mongoose.Schema({
     email:{
         type: String,
-        required: true
+        required: true,
+        unique: true,
+        trim: true,
     },
     username:{
         type:String,
-        required: true
+        required: true,
+        unique: true,
+        trim: true,
     },
     password: {
         type: String,
@@ -15,23 +19,28 @@ const userSchema = new mongoose.Schema({
     },
     firstName: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     lastName: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     phone: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     points: {
         type: Number,
-        required: true
+        required: true,
+        default: 0
     },
     cart:{
         type: Array,
-        required: true
+        required: true,
+        default: []
     }
 
 }, {
