@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
     },
     username:{
-        type:String,
+        type: String,
         required: true,
         unique: true,
         trim: true,
@@ -34,15 +34,19 @@ const userSchema = new mongoose.Schema({
     },
     points: {
         type: Number,
-        required: true,
+        required: false,
         default: 0
     },
     cart:{
         type: Array,
-        required: true,
+        required: false,
         default: []
+    },
+    isEmailVerified: {
+      type: Boolean,
+      required: false,
+      default: false,
     }
-
 }, {
     timestamps: true // createdAt, updatedAt
 });
