@@ -1,4 +1,3 @@
-// backend/controllers/user.controller.js
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import User from "../models/user.model.js";
@@ -32,7 +31,7 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// SIGN UP
+// SIGN UP (from feature/auth-otp-2fa)
 export const doSignup = async (req, res) => {
   try {
     let { email, username, password, firstName, lastName, phone } = req.body;
@@ -48,7 +47,7 @@ export const doSignup = async (req, res) => {
       return res.status(400).json({ success: false, message: "Please fill in all sections." });
     }
 
-    // Simple validations (can tweak)
+    // Validations
     if (!/^\+?\d{10,}$/.test(phone)) {
       return res.status(400).json({ success: false, message: "Invalid phone number format. Please enter at least 10 digits." });
     }
@@ -62,7 +61,6 @@ export const doSignup = async (req, res) => {
         .status(400).json({success: false,message: "Password must be at least 8 characters long."});
     }
 
-    // Uniqueness checks
     const existingUserByEmail = await User.findOne({ email });
     if (existingUserByEmail) {
       return res.status(400).json({ success: false, message: "Email already used." });
@@ -73,7 +71,6 @@ export const doSignup = async (req, res) => {
       return res.status(400).json({ success: false, message: "Username already used." });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
@@ -90,7 +87,6 @@ export const doSignup = async (req, res) => {
 
     const savedUser = await newUser.save();
 
-    // Send email verification OTP
     const emailData = await sendOTPVerificationEmail({
       _id: savedUser._id,
       email: savedUser.email,
@@ -109,12 +105,11 @@ export const doSignup = async (req, res) => {
   }
 };
 
-// LOGIN (email OR username OR identifier) + 2FA OTP
+// LOGIN (from feature/auth-otp-2fa)
 export const doLogin = async (req, res) => {
   try {
     const { email, username, identifier, password } = req.body;
-    
-    // Allow login with email, username, or generic "identifier"
+
     const loginField = email || username || identifier;
 
     if (!loginField || !password) {
@@ -147,11 +142,14 @@ export const doLogin = async (req, res) => {
         purpose: "EMAIL_VERIFICATION",
       });
 
-      return res.status(200).json({  success: true, status: "PENDING", message: "Email not verified. A new verification code has been sent to your email.", data: emailData 
+      return res.status(200).json({
+        success: true,
+        status: "PENDING",
+        message: "Email not verified. A new verification code has been sent to your email.",
+        data: emailData 
       });
     }
 
-    // Send 2FA OTP
     const emailData = await sendOTPVerificationEmail({
       _id: user._id,
       email: user.email,
@@ -169,3 +167,39 @@ export const doLogin = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server Error during login." });
   }
 };
+
+// UPDATE CART (keep from main)
+export const updateCart = async (req, res) =>{
+  const {id} = req.params
+  const { foodId, quantity } = req.body;
+
+  try {
+      if (quantity === 0) {
+          await User.updateOne(
+              { _id: id },
+              { $pull: { cart: { foodId } } }
+          );
+          return res.status(200).json({ message: 'Item removed from cart' });
+      }
+
+      const result = await User.updateOne(
+          { _id: id, 'cart.foodId': foodId },
+          { $set: { 'cart.$.quantity': quantity } }
+      );
+
+      if (result.matchedCount === 0) {
+        await User.updateOne(
+          { _id: id },
+          { $push: { cart: { foodId, quantity } } }
+        );
+        return res.status(200).json({ message: 'Item added to cart' });
+      }
+
+      res.status(200).json({ message: 'Cart updated successfully' });
+
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to update cart' });
+  }
+}
+
