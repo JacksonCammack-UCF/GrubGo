@@ -8,7 +8,7 @@ router.post("/verify-email-otp", async (req, res) => {
   try {
     const { userId, otp } = req.body;
     const result = await verifyEmailOTP({ userId, otp });
-    if(result.status == "RESEND"){
+    if(result.status === "RESEND"){
       return res.status(200).json({ success: true, status: result.status, message: result.message, data: result.data });
     }
     return res.status(200).json({ success: true, message: result.message });
@@ -22,7 +22,7 @@ router.post("/verify-2fa-otp", async (req, res) => {
   try {
     const { userId, otp } = req.body;
     const result = await verify2FAOTP({ userId, otp });
-    if(result.status == "RESEND"){
+    if(result.status === "RESEND"){
       return res.status(200).json({ success: true, status: result.status, message: result.message, data: result.data });
     }
     return res.status(200).json({ success: true, message: result.message, data: result.data });
@@ -47,7 +47,7 @@ router.post("/verify-password-reset-otp", async (req, res) => {
   try {
     const { userId, otp } = req.body;
     const result = await verifyPasswordResetOTP({ userId, otp });
-    if(result.status == "RESEND"){
+    if(result.status === "RESEND"){
       return res.status(200).json({ success: true, status: result.status, message: result.message, data: result.data });
     }
     return res.status(200).json({success: true, message: result.message, data: { password_reset_token: result.password_reset_token }});
