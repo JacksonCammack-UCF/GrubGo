@@ -256,7 +256,7 @@ export const resetPassword = async ({ password_reset_token, newPassword }) => {
       throw new Error("Empty password details are not allowed!");
     }
 
-    const trimmed = (newPassword || "").trim();
+    const trimmed = newPassword.trim();
     const passwordValidationResult = validatePasswordStrength(trimmed);
     if (passwordValidationResult !== null) {
       throw new Error(passwordValidationResult);

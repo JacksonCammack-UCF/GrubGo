@@ -56,8 +56,9 @@ export const doSignup = async (req, res) => {
     if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
       return res.status(400).json({ success: false, message: "Not a valid email." });
     }
+    
     const passwordValidationResult = validatePasswordStrength(password);
-    if (passwordValidationResult !== true) {
+    if (passwordValidationResult !== null) {
       return res.status(400).json({ success: false, message: passwordValidationResult });
     }
 
