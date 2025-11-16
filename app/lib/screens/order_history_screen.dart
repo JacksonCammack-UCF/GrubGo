@@ -53,7 +53,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
 
-      // ⭐ CUSTOM APPBAR ONLY FOR THIS SCREEN
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 2,
@@ -70,7 +69,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           },
         ),
 
-        // TITLE (same as AppTopBar)
+        // TITLE
         title: const Text(
           "GrubGo",
           style: TextStyle(
@@ -80,7 +79,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           ),
         ),
 
-        // RIGHT SIDE = EXACT SAME ACTIONS AS AppTopBar
+        // RIGHT SIDE
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined, color: Colors.black),
