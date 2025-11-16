@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import User from "../models/user.model.js";
 import { sendOTPVerificationEmail } from "./auth.controller.js";
+import { validatePasswordStrength } from "../utils/passwordPolicy.js";
 
 // GET USERS
 export const getUsers = async (req, res) => {
@@ -55,10 +56,9 @@ export const doSignup = async (req, res) => {
     if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
       return res.status(400).json({ success: false, message: "Not a valid email." });
     }
-
-    if (password.length < 8) {
-      return res
-        .status(400).json({success: false,message: "Password must be at least 8 characters long."});
+    const passwordValidationResult = validatePasswordStrength(password);
+    if (passwordValidationResult !== true) {
+      return res.status(400).json({ success: false, message: passwordValidationResult });
     }
 
     const existingUserByEmail = await User.findOne({ email });
