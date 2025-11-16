@@ -17,18 +17,18 @@ const foodSchema = new mongoose.Schema({
     },
     inStock:{
         type: Boolean,
-        required: false,
         default: true
     },
     imageUrl: {
         type: String,
-        required: false,
         default: function() {
-            if (!this.name) return undefined;
+            if (!this.name) 
+                return undefined;
             // Generate a simple slug based on the food name
             // E.g., "Spaghetti Bolognese" -> "spaghetti_bolognese"
             const slug = this.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-            
+            if (!slug) 
+                return undefined;            
             // Default image path
             return `/images/menu/${slug}.jpg`;
         }
