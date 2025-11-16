@@ -34,7 +34,10 @@ export const getOrder = async(req, res) =>{
             for (let i = 0; i < orderLength; i++) {
             const item = newOrder.items[i];
             const foodID = item.foodId;
-            const quantity = item.qty;
+
+            // from will probably not needed but fallback in case frontend forget to change specific ways of typing it
+            const quantity = item.qty ?? item.quantity ?? 1;
+
             
 
             const food = await Food.findById(foodID);
@@ -61,6 +64,11 @@ export const getOrder = async(req, res) =>{
 
         // UPDATE POINTS EARNED
         const points_earned = Math.round(total * 0.1);
+
+        // will send points & save
+        newOrder.pointsEarned = points_earned;
+        await newOrder.save();
+
         const total_points = + tempUser.points + points_earned;
         
         await User.updateOne({_id: id}, {points: total_points});
@@ -74,3 +82,26 @@ export const getOrder = async(req, res) =>{
 
 }
 
+
+// will get order history
+export const getUserOrderHistory = async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        // sorted by creation date descending
+        const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            orders,
+        });
+
+    } catch (err) {
+        console.error("Error loading order history:", err.message);
+
+        res.status(500).json({
+            success: false,
+            message: "Server error while loading order history",
+        });
+    }
+};
