@@ -3,7 +3,8 @@ import mongoose from 'mongoose';
 const foodSchema = new mongoose.Schema({
     name:{
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     price:{
         type: Number,
@@ -11,15 +12,26 @@ const foodSchema = new mongoose.Schema({
     },
     category:{
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     inStock:{
         type: Boolean,
-        required: true
+        required: false,
+        default: true
     },
     imageUrl: {
         type: String,
-        required: true
+        required: false,
+        default: function() {
+            if (!this.name) return undefined;
+            // Generate a simple slug based on the food name
+            // E.g., "Spaghetti Bolognese" -> "spaghetti_bolognese"
+            const slug = this.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+            
+            // Default image path
+            return `/images/menu/${slug}.jpg`;
+        }
     }
 }, {
     timestamps: true // createdAt, updatedAt
