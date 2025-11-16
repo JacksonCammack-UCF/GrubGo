@@ -191,7 +191,11 @@ export const requestPasswordResetOTP = async ({ email }) => {
 
     const user = await User.findOne({ email });
     if (user) {
-      await sendOTPVerificationEmail({_id: user._id, email: user.email, purpose: "PASSWORD_RESET"});
+      try{
+        await sendOTPVerificationEmail({_id: user._id, email: user.email, purpose: "PASSWORD_RESET"});
+      } catch (error) {
+        console.error("Error sending password reset OTP:", error);
+      }
     }
 
     // Always return a generic response to prevent user enumeration
