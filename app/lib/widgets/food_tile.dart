@@ -12,18 +12,30 @@ class FoodTile extends StatefulWidget {
     this.onDelete,
   });
 
-
   @override
   State<FoodTile> createState() => _FoodTileState();
 }
 
 class _FoodTileState extends State<FoodTile> {
   bool adding = false;
+  bool stockLoading = false;
 
   Future<void> addToCart() async {
     setState(() => adding = true);
     await APIService.updateCart(GlobalData.userId, widget.food["_id"], 1);
     setState(() => adding = false);
+  }
+
+  Future<void> toggleStock(bool val) async {
+    setState(() => stockLoading = true);
+
+    final ok = await APIService.setFoodStock(widget.food["_id"], val);
+
+    setState(() => stockLoading = false);
+
+    if (ok && widget.onDelete != null) {
+      widget.onDelete!(); // reload list on home
+    }
   }
 
   Widget fallbackIcon({double size = 56}) {
@@ -50,7 +62,6 @@ class _FoodTileState extends State<FoodTile> {
     return Stack(
       alignment: Alignment.center,
       children: [
-        // CARD
         Container(
           margin: const EdgeInsets.only(bottom: 14),
           padding: const EdgeInsets.all(14),
@@ -67,7 +78,6 @@ class _FoodTileState extends State<FoodTile> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // IMAGE
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: (food["imageUrl"] != null &&
@@ -85,7 +95,6 @@ class _FoodTileState extends State<FoodTile> {
 
                   const SizedBox(width: 12),
 
-                  // NAME / CATEGORY / PRICE
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +108,7 @@ class _FoodTileState extends State<FoodTile> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          food["type"] ?? "food",
+                          food["category"] ?? "food",
                           style: const TextStyle(
                             fontSize: 13,
                             color: Colors.black45,
@@ -122,6 +131,34 @@ class _FoodTileState extends State<FoodTile> {
 
               const SizedBox(height: 10),
 
+              // ENABLE / DISABLE STOCK SWITCH
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    inStock ? "In stock" : "Out of stock",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: inStock ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  stockLoading
+                      ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                      : Switch(
+                    value: inStock,
+                    onChanged: toggleStock,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+
               // BUTTONS
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -136,7 +173,7 @@ class _FoodTileState extends State<FoodTile> {
                     )
                         : const Icon(Icons.add_shopping_cart,
                         color: Color(0xFF4285F4)),
-                    onPressed: adding ? null : addToCart,
+                    onPressed: adding || !inStock ? null : addToCart,
                   ),
 
                   IconButton(
@@ -205,7 +242,6 @@ class _FoodTileState extends State<FoodTile> {
                 ],
               ),
 
-              // LABELS
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: const [
@@ -223,14 +259,10 @@ class _FoodTileState extends State<FoodTile> {
           ),
         ),
 
-        // OOS BANNER
         if (!inStock)
           Positioned(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 75,
-                vertical: 45,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 40),
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.65),
                 borderRadius: BorderRadius.circular(10),

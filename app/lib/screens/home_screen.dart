@@ -11,6 +11,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+
+  final ScrollController _scrollController = ScrollController();
+  int currentPage = 1;
+  int pageSize = 5;
+
+  int get totalPages {
+    if (foods.isEmpty) return 1;
+    return (foods.length / pageSize).ceil();
+  }
+
+  List<dynamic> get paginatedFoods {
+    final start = (currentPage - 1) * pageSize;
+    final end = start + pageSize;
+    return foods.sublist(start, end > foods.length ? foods.length : end);
+  }
+
   List<dynamic> foods = [];
   bool loading = true;
 
@@ -30,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       foods = data;
       loading = false;
+      currentPage = 1;
     });
   }
 
@@ -76,8 +93,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 "imageUrl": imgCtrl.text.trim().isEmpty
                     ? "https://via.placeholder.com/150"
                     : imgCtrl.text.trim(),
-                "inStock": true,
+                "inStock": inStock,
               };
+
 
               setPop(() {
                 localLoading = true;
@@ -184,6 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
           : RefreshIndicator(
         onRefresh: loadFoods,
         child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.all(16),
           children: [
             // HEADER ROW
@@ -225,12 +244,54 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 20),
 
             // FOOD LIST
-            for (final food in foods)
+            for (final food in paginatedFoods)
               FoodTile(
                 food: food,
-                onDelete: () => loadFoods(),   // refresh list after delete
+                onDelete: () => loadFoods(),
               ),
 
+            const SizedBox(height: 20),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_left, size: 32),
+                  onPressed: currentPage > 1
+                      ? () {
+                    setState(() => currentPage--);
+
+                    _scrollController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  }
+                      : null,
+                ),
+                Text(
+                  "Page $currentPage of $totalPages",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.arrow_right, size: 32),
+                  onPressed: currentPage < totalPages
+                      ? () {
+                    setState(() => currentPage++);
+
+                    _scrollController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  }
+                      : null,
+                ),
+              ],
+            ),
           ],
         ),
       ),

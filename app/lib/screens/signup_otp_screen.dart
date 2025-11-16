@@ -48,12 +48,18 @@ class _SignupOtpScreenState extends State<SignupOtpScreen> {
       return;
     }
 
+    if (res["status"] == "RESEND") {
+      setState(() => errorMsg = "Code expired. A new OTP was sent.");
+      return;
+    }
+
+    // Regular failure
     if (res["success"] != true) {
       setState(() => errorMsg = res["message"] ?? "Invalid code.");
       return;
     }
 
-    // Verified
+    // SUCCESS
     Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 

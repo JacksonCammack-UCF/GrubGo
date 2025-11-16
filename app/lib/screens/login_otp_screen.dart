@@ -50,18 +50,27 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
       return;
     }
 
+    // expired OTP
+    if (res["status"] == "RESEND") {
+      setState(() {
+        errorMsg = res["message"] ?? "Code expired. A new one was sent.";
+      });
+      return;
+    }
+
     if (res["success"] != true) {
       setState(() => errorMsg = res["message"] ?? "Invalid code.");
       return;
     }
 
-    // Successfully logged in
+    // SUCCESS
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.home,
           (route) => false,
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
