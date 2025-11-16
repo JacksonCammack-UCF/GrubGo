@@ -5,6 +5,7 @@ import User from "../models/user.model.js";
 import { generateOTP } from "../utils/generateOTP.js";
 import { hashData, verifyHashedData } from "../utils/hashData.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import { validatePasswordStrength } from "../utils/passwordPolicy.js";
 
 const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_OTP_ATTEMPTS = 5;
@@ -256,8 +257,9 @@ export const resetPassword = async ({ password_reset_token, newPassword }) => {
     }
 
     const trimmed = newPassword.trim();
-    if (trimmed.length < 8) {
-      throw new Error("Password must be at least 8 characters long!");
+    const passwordValidationResult = validatePasswordStrength(trimmed);
+    if (passwordValidationResult !== null) {
+      throw new Error(passwordValidationResult);
     }
 
     let payload;
