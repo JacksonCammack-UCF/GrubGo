@@ -169,15 +169,33 @@ class _CartScreenState extends State<CartScreen> {
 
                 ElevatedButton(
                   onPressed: () async {
-                    // Place order AND load CheckoutScreen with returned data
+                    // 1. Place order
                     final res = await APIService.placeOrder(GlobalData.userId);
 
                     if (res != null && res["success"] == true) {
+
+                      // 2. CLEAR CART using updateCart (quantity = 0)
+                      for (final item in cartItems) {
+                        await APIService.updateCart(
+                          GlobalData.userId,
+                          item["foodId"],
+                          0,  // tells backend to remove item
+                        );
+                      }
+
+                      // 3. Clear local list too (instant UI refresh)
+                      setState(() {
+                        cartItems.clear();
+                        subtotal = 0;
+                      });
+
+                      // 4. Navigate to checkout summary
                       Navigator.pushNamed(
                         context,
                         AppRoutes.checkout,
-                        arguments: res, // send order + new user
+                        arguments: res,
                       );
+
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Checkout failed.")),

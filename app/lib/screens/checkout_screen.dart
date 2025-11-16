@@ -26,8 +26,14 @@ class CheckoutScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Order Summary"),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.home),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.home,
+                  (route) => false,
+            );
+          },
         ),
       ),
       body: Padding(

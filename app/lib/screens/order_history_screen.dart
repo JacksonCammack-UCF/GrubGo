@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../utils/api_service.dart';
 import '../utils/global_data.dart';
 import '../widgets/app_topbar.dart';
+import '../routes.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
   const OrderHistoryScreen({super.key});
@@ -23,14 +24,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   Future<void> loadOrders() async {
     final result = await APIService.getOrderHistory(GlobalData.userId);
 
-    // Load all foods for lookup
     final foods = await APIService.getFoods();
 
     final Map<String, dynamic> foodMap = {
       for (var f in foods) f["_id"]: f,
     };
 
-    // Replace foodId with readable name + price
     for (var order in result) {
       for (var item in order["items"]) {
         final food = foodMap[item["foodId"]];
@@ -53,7 +52,62 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppTopBar(),
+
+      // ⭐ CUSTOM APPBAR ONLY FOR THIS SCREEN
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 2,
+
+        // LEFT SIDE = HOME ICON
+        leading: IconButton(
+          icon: const Icon(Icons.home, color: Colors.black),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.home,
+                  (route) => false,
+            );
+          },
+        ),
+
+        // TITLE (same as AppTopBar)
+        title: const Text(
+          "GrubGo",
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+
+        // RIGHT SIDE = EXACT SAME ACTIONS AS AppTopBar
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.black),
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.cart);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_outline, color: Colors.black),
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.profile);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.black),
+            onPressed: () {
+              GlobalData.clear();
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.login,
+                    (_) => false,
+              );
+            },
+          ),
+        ],
+      ),
+
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : orders.isEmpty
@@ -64,7 +118,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         itemBuilder: (context, index) {
           final o = orders[index];
 
-          // format order id as xx...xx
           final idStr = o["_id"].toString();
           final shortId =
               "${idStr.substring(0, 2)}...${idStr.substring(idStr.length - 2)}";
@@ -126,7 +179,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   Widget _itemRow(dynamic item) {
-    // quantity can be stored as qty or quantity w/ fallback
     final int qty = (item["qty"] ?? item["quantity"] ?? 1) as int;
 
     final String name = item["name"]?.toString() ?? "Unknown Item";

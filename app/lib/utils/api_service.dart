@@ -212,4 +212,21 @@ class APIService {
     }
   }
 
+  // Toggle Stock
+  static Future<bool> setFoodStock(String foodId, bool inStock) async {
+    final url = Uri.parse("$baseURL/foods/$foodId");
+
+    try {
+      final res = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"inStock": inStock}),
+      );
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+
 }
