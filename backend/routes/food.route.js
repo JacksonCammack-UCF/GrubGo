@@ -3,18 +3,19 @@ import express from "express";
 
 import { createFood, deleteFood, getFoods, updateFood } from "../controllers/food.controller.js";
 
+import { verifyAdmin } from "../middlewares/auth.middleware.js";
+
 const router = express.Router();
 
 // GET PRODUCT
 router.get("/", getFoods)
 
+// Admin-only: create / update / delete foods
 // CREATE PRODUCT
-router.post("/", createFood)
-
+router.post("/", verifyAdmin, createFood)
 // UPDATE PRODUCT
-router.put("/:id", updateFood)
-
+router.put("/:id", verifyAdmin, updateFood)
 // DELETE PRODUCT
-router.delete("/:id", deleteFood)
+router.delete("/:id", verifyAdmin, deleteFood)
 
 export default router;

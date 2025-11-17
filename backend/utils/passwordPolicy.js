@@ -1,3 +1,4 @@
+// backend/utils/passwordPolicy.js
 export const validatePasswordStrength = (password) => {
     const passwordTrimmed = (password || "").trim();
     const minLength = 8;

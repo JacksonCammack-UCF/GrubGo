@@ -1,3 +1,4 @@
+// backend/utils/sendEmail.js
 import dotenv from "dotenv";
 import Mailjet from "node-mailjet";
 
