@@ -86,6 +86,13 @@ class _CartScreenState extends State<CartScreen> {
               itemBuilder: (context, index) {
                 final item = cartItems[index];
 
+                // Auto build full URL if needed
+                String image = item["imageUrl"] ?? "";
+                if (image.isNotEmpty && !image.startsWith("http")) {
+                  image =
+                  "http://10.0.2.2:5050/images/menu/$image";
+                }
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(16),
@@ -98,11 +105,9 @@ class _CartScreenState extends State<CartScreen> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: (item["imageUrl"] != null &&
-                            item["imageUrl"].toString().isNotEmpty &&
-                            item["imageUrl"].toString().startsWith("http"))
+                        child: (image.isNotEmpty)
                             ? Image.network(
-                          item["imageUrl"],
+                          image,
                           width: 64,
                           height: 64,
                           fit: BoxFit.cover,
@@ -160,26 +165,34 @@ class _CartScreenState extends State<CartScreen> {
             ),
             child: Column(
               children: [
-                _summaryRow("Subtotal:", "\$${subtotal.toStringAsFixed(2)}"),
-                _summaryRow("Total (incl. tax):", "\$${total.toStringAsFixed(2)}", color: red),
-                _summaryRow("Points Earned:", "+$pointsEarned", color: red),
-                _summaryRow("New Total Points:", "$newTotalPoints", color: red),
+                _summaryRow("Subtotal:",
+                    "\$${subtotal.toStringAsFixed(2)}"),
+                _summaryRow("Total (incl. tax):",
+                    "\$${total.toStringAsFixed(2)}",
+                    color: red),
+                _summaryRow(
+                    "Points Earned:", "+$pointsEarned",
+                    color: red),
+                _summaryRow("New Total Points:",
+                    "$newTotalPoints",
+                    color: red),
 
                 const SizedBox(height: 16),
 
                 ElevatedButton(
                   onPressed: () async {
                     // 1. Place order
-                    final res = await APIService.placeOrder(GlobalData.userId);
+                    final res = await APIService.placeOrder(
+                        GlobalData.userId);
 
-                    if (res != null && res["success"] == true) {
-
+                    if (res != null &&
+                        res["success"] == true) {
                       // 2. CLEAR CART using updateCart (quantity = 0)
                       for (final item in cartItems) {
                         await APIService.updateCart(
                           GlobalData.userId,
                           item["foodId"],
-                          0,  // tells backend to remove item
+                          0, // tells backend to remove item
                         );
                       }
 
@@ -195,18 +208,22 @@ class _CartScreenState extends State<CartScreen> {
                         AppRoutes.checkout,
                         arguments: res,
                       );
-
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Checkout failed.")),
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
+                        const SnackBar(
+                            content:
+                            Text("Checkout failed.")),
                       );
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: red,
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 20),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius:
+                      BorderRadius.circular(12),
                     ),
                   ),
                   child: const Text(
@@ -226,14 +243,16 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _summaryRow(String label, String value, {Color color = Colors.black}) {
+  Widget _summaryRow(String label, String value,
+      {Color color = Colors.black}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              style: const TextStyle(
+                  fontSize: 16, fontWeight: FontWeight.w600)),
           Text(
             value,
             style: TextStyle(
