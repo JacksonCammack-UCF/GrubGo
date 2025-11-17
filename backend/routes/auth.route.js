@@ -1,3 +1,4 @@
+// backend/routes/auth.route.js
 import express from "express";
 import { verifyEmailOTP, verify2FAOTP, requestPasswordResetOTP, verifyPasswordResetOTP, resetPassword } from "../controllers/auth.controller.js";
 

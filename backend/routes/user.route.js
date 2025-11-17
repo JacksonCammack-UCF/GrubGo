@@ -1,3 +1,4 @@
+// backend/routes/user.route.js
 import express from "express";
 import { deleteUser, doLogin, doSignup, getUsers, updateCart } from "../controllers/user.controller.js";
 
