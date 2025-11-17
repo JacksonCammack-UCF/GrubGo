@@ -129,7 +129,7 @@ export const doLogin = async (req, res) => {
 
     const user = await User.findOne(query);
     if (!user) {
-        return res.status(400).json({ success: false, message: "Email / Password incorrect." });
+      return res.status(400).json({ success: false, message: "Email / Password incorrect." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -137,6 +137,7 @@ export const doLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email / Password incorrect." });
     }
 
+    // If email NOT verified → send email verification OTP
     if (!user.isEmailVerified) {
       const emailData = await sendOTPVerificationEmail({
         _id: user._id,
@@ -148,10 +149,15 @@ export const doLogin = async (req, res) => {
         success: true,
         status: "PENDING",
         message: "Email not verified. A new verification code has been sent to your email.",
-        data: emailData 
+        data: {
+          ...emailData,
+          name: user.name || user.username,
+          isAdmin: user.isAdmin || false,   // ⭐ added here
+        }
       });
     }
 
+    // Email IS verified → send 2FA OTP
     const emailData = await sendOTPVerificationEmail({
       _id: user._id,
       email: user.email,
@@ -162,8 +168,13 @@ export const doLogin = async (req, res) => {
       success: true,
       status: "PENDING",
       message: "Credentials valid. 2FA OTP sent to email.",
-      data: emailData,
+      data: {
+        ...emailData,
+        name: user.name || user.username,
+        isAdmin: user.isAdmin || false,   // ⭐ added here
+      }
     });
+
   } catch (error) {
     console.log("Error in doLogin:", error.message);
     return res.status(500).json({ success: false, message: "Server Error during login." });

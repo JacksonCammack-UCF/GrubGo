@@ -2,13 +2,13 @@
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
-    email:{
+    email: {
         type: String,
         required: true,
         unique: true,
         trim: true,
     },
-    username:{
+    username: {
         type: String,
         required: true,
         unique: true,
@@ -35,27 +35,24 @@ const userSchema = new mongoose.Schema({
     },
     points: {
         type: Number,
-        required: false,
         default: 0
     },
-    cart:{
+    cart: {
         type: Array,
-        required: false,
         default: []
     },
     isEmailVerified: {
-      type: Boolean,
-      required: false,
-      default: false,
+        type: Boolean,
+        default: false,
     },
     isAdmin: {
-      type: Boolean,
-      default: false,
+        type: Boolean,
+        default: false,
     },
 }, {
-    timestamps: true // createdAt, updatedAt
+    timestamps: true
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
 export default User;
