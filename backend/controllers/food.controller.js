@@ -19,7 +19,7 @@ export const createFood = async(req, res) =>{
         const {name, price, category, imageUrl, inStock} = req.body;
 
         if (!name || price === undefined || price === null || !category) {
-            return  res.status(400).json({success: false, message: "Name,price and category are required!"});
+            return  res.status(400).json({success: false, message: "Name, price and category are required!"});
         }
         const foodData = {
             name: name.trim(),
@@ -28,11 +28,11 @@ export const createFood = async(req, res) =>{
         };
 
         if (typeof inStock === "boolean") {
-        foodData.inStock = inStock;
+            foodData.inStock = inStock;
         }
 
         if (typeof imageUrl === "string" && imageUrl.trim().length > 0) {
-        foodData.imageUrl = imageUrl.trim();
+            foodData.imageUrl = imageUrl.trim();
         }
 
         const newFood = new Food(foodData);
@@ -51,7 +51,7 @@ export const updateFood = async(req, res) =>{
 
     // 404 error, not found!
     if(!mongoose.Types.ObjectId.isValid(id)){
-        return res.status(404).json({success: "false", message: "Invalid food ID!"});
+        return res.status(404).json({success: false, message: "Invalid food ID!"});
     }
 
     try {
@@ -61,10 +61,10 @@ export const updateFood = async(req, res) =>{
             return res.status(404).json({ success: false, message: "Food not found!" });
         }
         
-        res.status(200).json({ success: "true", data: updatedFood}); 
+        res.status(200).json({ success: true, data: updatedFood}); 
     } catch (error) {
 
-        res.status(500).json({ success: "false", message: "Server Error"});
+        res.status(500).json({ success: false, message: "Server Error"});
     }
 }
 
@@ -76,7 +76,7 @@ export const deleteFood = async (req, res) => {
 
     // 404 error, not found!
     if(!mongoose.Types.ObjectId.isValid(id)){
-        return res.status(404).json({success: "false", message: "Invalid food ID!"});
+        return res.status(404).json({success: false, message: "Invalid food ID!"});
     }
     
     // Check for it in database!
