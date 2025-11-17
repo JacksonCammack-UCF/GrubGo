@@ -243,3 +243,59 @@ export const getCart = async (req, res) => {
       .json({ success: false, message: "Server Error" });
   }
 };
+
+export const updateUserProfile = async (req, res) => {
+  const { id } = req.params;
+  const { firstName } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: "Invalid user ID." });
+  }
+
+  if (!firstName || typeof firstName !== "string") {
+    return res.status(400).json({ success: false, message: "Invalid name." });
+  }
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { firstName: firstName.trim() },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while updating profile.",
+    });
+  }
+};
+
+export const getUserById = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: "Invalid user ID" });
+  }
+
+  try {
+    const user = await User.findById(id).select("-password");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};

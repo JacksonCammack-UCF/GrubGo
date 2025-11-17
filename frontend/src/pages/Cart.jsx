@@ -3,8 +3,9 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 
-// ⭐ Cart context
+// ⭐ Cart + Auth contexts
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 
 // ⭐ Animations
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,29 +16,80 @@ export default function Cart() {
 
   const navigate = useNavigate();
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
+  const { user } = useAuth();
 
-  // ⭐ SAFE total price calculation
-  const totalPrice = cart.reduce((sum, item) => {
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+
+  // ⭐ Compute subtotal
+  const subtotal = cart.reduce((sum, item) => {
     const price = Number(item?.price) || 0;
     const qty = Number(item?.qty) || 0;
     return sum + price * qty;
   }, 0);
+
+  // ⭐ Tax (7%)
+  const taxAmount = subtotal * 0.07;
+
+  // ⭐ Total
+  const total = subtotal + taxAmount;
+
+  // ⭐ HANDLE CHECKOUT
+  const handleCheckout = async () => {
+    if (!user) {
+      setCheckoutError("You must be logged in to checkout.");
+      return navigate("/login");
+    }
+
+    if (cart.length === 0) {
+      setCheckoutError("Your cart is empty.");
+      return;
+    }
+
+    try {
+      setIsCheckoutLoading(true);
+      setCheckoutError("");
+
+      const res = await fetch(`http://localhost:5050/api/orders/${user.id}`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Checkout failed.");
+      }
+
+      const orderId = data.order?._id;
+      if (!orderId) {
+        throw new Error("Order ID missing in response.");
+      }
+
+      // ⭐ Clear cart AFTER successful order
+      clearCart();
+
+      navigate(`/order-success/${orderId}`);
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setCheckoutError(err.message || "Server error during checkout.");
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen bg-gray-50">
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
-      {/* ⭐ Bottom padding so summary box never gets cut off */}
+      {/* ⭐ Bottom padding so summary never gets cut off */}
       <div className="pt-28 px-6 max-w-4xl mx-auto pb-32">
         <h1 className="text-4xl font-bold mb-6 text-gray-800">Your Cart</h1>
 
-        {/* ⭐ Empty Cart State (now with View Menu button) */}
+        {/* ⭐ Empty Cart State */}
         {cart.length === 0 && (
           <div className="text-center mt-16">
-            <p className="text-gray-600 text-xl mb-6">
-              Your cart is empty.
-            </p>
+            <p className="text-gray-600 text-xl mb-6">Your cart is empty.</p>
 
             <button
               onClick={() => navigate("/menu")}
@@ -102,9 +154,7 @@ export default function Cart() {
                         -
                       </button>
 
-                      <span className="font-semibold text-gray-800">
-                        {qty}
-                      </span>
+                      <span className="font-semibold text-gray-800">{qty}</span>
 
                       <button
                         onClick={() => updateQuantity(item._id, qty + 1)}
@@ -127,7 +177,7 @@ export default function Cart() {
           </AnimatePresence>
         </div>
 
-        {/* Cart Summary */}
+        {/* ⭐ Cart Summary With TAX */}
         {cart.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -138,14 +188,38 @@ export default function Cart() {
               Order Summary
             </h2>
 
-            <div className="flex justify-between text-lg font-medium text-gray-700 mb-6">
-              <span>Total:</span>
-              <span>${totalPrice.toFixed(2)}</span>
+            <div className="space-y-2 text-gray-700 mb-6">
+              <div className="flex justify-between text-lg">
+                <span>Subtotal:</span>
+                <span>${subtotal.toFixed(2)}</span>
+              </div>
+
+              <div className="flex justify-between text-lg">
+                <span>Tax:</span>
+                <span>${taxAmount.toFixed(2)}</span>
+              </div>
+
+              <div className="flex justify-between text-xl font-semibold text-gray-900 pt-2 border-t">
+                <span>Total:</span>
+                <span>${total.toFixed(2)}</span>
+              </div>
             </div>
 
-            <button className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition">
-              Checkout
+            {/* ⭐ Checkout Button */}
+            <button
+              onClick={handleCheckout}
+              disabled={isCheckoutLoading}
+              className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition disabled:bg-gray-500"
+            >
+              {isCheckoutLoading ? "Processing..." : "Checkout"}
             </button>
+
+            {/* ⭐ Error Message */}
+            {checkoutError && (
+              <p className="text-red-600 text-center text-sm mt-2">
+                {checkoutError}
+              </p>
+            )}
 
             <button
               onClick={clearCart}

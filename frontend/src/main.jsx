@@ -15,11 +15,14 @@ import Contact from "./pages/Contact.jsx";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import Login2FA from "./pages/Login2FA.jsx";
 import Cart from "./pages/Cart.jsx";
+import OrderSuccess from "./pages/OrderSuccess.jsx";
+import OrderHistory from "./pages/OrderHistory.jsx";
 
 import AdminRoute from "./components/AdminRoute.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AddFood from "./pages/AddFood.jsx";
 import EditFood from "./pages/EditFood.jsx";
+import Settings from "./pages/Settings.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -36,6 +39,9 @@ createRoot(document.getElementById("root")).render(
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/login-2fa" element={<Login2FA />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+            <Route path="/orders" element={<OrderHistory />} />
+            <Route path="/settings" element={<Settings />} />
 
             <Route
               path="/admin"

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Menu, ShoppingCart } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartContext"; // ⭐ NEW
+import { useCart } from "../context/CartContext";
 
 export default function Navbar({ onMenuClick }) {
   const [scrolled, setScrolled] = useState(false);
@@ -10,11 +10,17 @@ export default function Navbar({ onMenuClick }) {
   const navigate = useNavigate();
 
   const { isAuthenticated, user, logout } = useAuth();
-  const { cart } = useCart(); // ⭐ NEW — access cart length
+  const { cart } = useCart();
 
-  const [cartBump, setCartBump] = useState(false); // ⭐ controls scale animation
+  const [cartBump, setCartBump] = useState(false);
 
-  // ⭐ Trigger bump whenever cart changes
+  // ⭐ Compute profile initial safely
+  const userInitial =
+    user?.firstName?.trim()?.charAt(0)?.toUpperCase() ||
+    user?.username?.trim()?.charAt(0)?.toUpperCase() ||
+    "U";
+
+  // Cart bump animation
   useEffect(() => {
     if (cart.length === 0) return;
     setCartBump(true);
@@ -82,8 +88,7 @@ export default function Navbar({ onMenuClick }) {
 
       {/* Right side */}
       <div className="flex items-center space-x-5 ml-auto">
-
-        {/* ⭐ CART ICON (always visible when logged in) */}
+        {/* CART ICON */}
         {isAuthenticated && (
           <button
             className={`relative transition-transform ${
@@ -95,8 +100,6 @@ export default function Navbar({ onMenuClick }) {
               size={28}
               className={isHome && !scrolled ? "text-white" : "text-black"}
             />
-
-            {/* ⭐ Cart badge */}
             {cart.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-yellow-500 text-black text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
                 {cart.length}
@@ -124,7 +127,7 @@ export default function Navbar({ onMenuClick }) {
           </>
         )}
 
-        {/* LOGGED IN → profile */}
+        {/* LOGGED IN USER MENU */}
         {isAuthenticated && (
           <div className="relative">
             <button
@@ -133,7 +136,7 @@ export default function Navbar({ onMenuClick }) {
               onClick={() => setIsMenuOpen((prev) => !prev)}
             >
               <span className="font-bold text-gray-700">
-                {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                {userInitial}
               </span>
             </button>
 

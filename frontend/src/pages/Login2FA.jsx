@@ -3,9 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
-// ⭐ import auth context
 import { useAuth } from "../context/AuthContext";
-// ⭐ import cart context
 import { useCart } from "../context/CartContext";
 
 export default function Login2FA() {
@@ -22,7 +20,6 @@ export default function Login2FA() {
   const [error, setError] = useState("");
   const inputRefs = useRef([]);
 
-  // Redirect if no userId
   useEffect(() => {
     if (!userId) navigate("/login");
   }, [userId, navigate]);
@@ -47,7 +44,7 @@ export default function Login2FA() {
     }
   };
 
-  // ⭐ Fetch full food details for each backend cart item
+  // ⭐ Convert backend cart
   const enrichCart = async (backendCart) => {
     return await Promise.all(
       backendCart.map(async (item) => {
@@ -55,12 +52,9 @@ export default function Login2FA() {
           const res = await fetch(`http://localhost:5050/api/foods/${item.foodId}`);
           const json = await res.json();
 
-          if (!json.success || !json.data) {
-            return null; // skip invalid items
-          }
+          if (!json.success || !json.data) return null;
 
           const food = json.data;
-
           return {
             _id: food._id,
             name: food.name,
@@ -69,12 +63,11 @@ export default function Login2FA() {
             imageUrl: food.imageUrl,
             qty: item.quantity,
           };
-        } catch (err) {
-          console.error("Failed to fetch food:", item.foodId, err);
+        } catch {
           return null;
         }
       })
-    ).then((items) => items.filter(Boolean)); // remove nulls
+    ).then((items) => items.filter(Boolean));
   };
 
   const handleSubmit = async (e) => {
@@ -106,29 +99,36 @@ export default function Login2FA() {
         return;
       }
 
-      // ⭐ RAW backend user
-      const backendUser = data.data;
+      // ⭐ Minimal backend user
+      const base = data.data;
 
-      // ⭐ Format auth user
+      // ⭐ FETCH FULL USER BEFORE LOGIN
+      const fullRes = await fetch(`http://localhost:5050/api/users/${base._id}`);
+      const fullJson = await fullRes.json();
+
+      const full = fullJson.data; // includes firstName, lastName, phone, points, etc.
+
+      // ⭐ Format final user for auth context
       const formattedUser = {
-        id: backendUser._id,
-        name: backendUser.firstName,
-        email: backendUser.email,
-        role: backendUser.isAdmin ? "admin" : "user",
-        isAdmin: backendUser.isAdmin,
+        id: full._id,
+        name: full.firstName,
+        email: full.email,
+        role: full.isAdmin ? "admin" : "user",
+        isAdmin: full.isAdmin,
+        points: full.points,
+        firstName: full.firstName,
+        lastName: full.lastName,
       };
 
-      // ⭐ Save login to AuthContext
+      // ⭐ Save to auth context
       login(formattedUser);
 
-      // ⭐ Convert backend cart → full enriched cart
-      const enrichedCart = await enrichCart(backendUser.cart || []);
-
-      // ⭐ Load enriched cart into CartContext
+      // ⭐ Load cart
+      const enrichedCart = await enrichCart(full.cart || []);
       setCart(enrichedCart || []);
 
       // ⭐ Redirect
-      navigate(backendUser.isAdmin ? "/admin" : "/menu");
+      navigate(full.isAdmin ? "/admin" : "/menu");
 
     } catch (err) {
       console.error(err);
@@ -162,13 +162,14 @@ export default function Login2FA() {
                   value={digit}
                   onChange={(e) => handleChange(e.target.value, index)}
                   onKeyDown={(e) => handleBackspace(e, index)}
-                  className="w-12 h-12 text-center text-xl font-semibold border rounded-lg 
-                  focus:ring-2 focus:ring-yellow-400 outline-none"
+                  className="w-12 h-12 text-center text-xl font-semibold border rounded-lg focus:ring-2 focus:ring-yellow-400 outline-none"
                 />
               ))}
             </div>
 
-            {error && <p className="text-red-600 text-center text-sm">{error}</p>}
+            {error && (
+              <p className="text-red-600 text-center text-sm">{error}</p>
+            )}
 
             <button
               type="submit"
@@ -178,15 +179,6 @@ export default function Login2FA() {
             </button>
           </form>
 
-          <p className="mt-4 text-center text-gray-600">
-            Didn’t get the code?{" "}
-            <button
-              onClick={() => alert("Resend coming soon")}
-              className="text-yellow-600 hover:underline"
-            >
-              Resend Code
-            </button>
-          </p>
         </div>
       </div>
     </div>

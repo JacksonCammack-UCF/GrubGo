@@ -1,11 +1,23 @@
 // backend/routes/user.route.js
 import express from "express";
-import { deleteUser, doLogin, doSignup, getUsers, updateCart, getCart } from "../controllers/user.controller.js";
+import { 
+  deleteUser, 
+  doLogin, 
+  doSignup, 
+  getUsers, 
+  updateCart, 
+  getCart,
+  updateUserProfile,
+  getUserById
+} from "../controllers/user.controller.js";
 
 const router = express.Router();
 
 // GET USERS
 router.get("/", getUsers);
+
+// ⭐ NEW — fetch single user (for refreshing points, etc.)
+router.get("/:id", getUserById);
 
 // GET CART
 router.get("/cart/:id", getCart);
@@ -18,6 +30,9 @@ router.post("/login", doLogin);
 
 // Signup
 router.post("/signup", doSignup);
+
+// Update Profile
+router.put("/profile/:id", updateUserProfile);
 
 // UPDATE CART
 router.post("/cart/:id", updateCart);
