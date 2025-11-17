@@ -1,3 +1,4 @@
+// backend/controllers/auth.controller.js
 import jwt from "jsonwebtoken";
 import UserOTPVerification from "../models/userOtpVerification.model.js";
 import User from "../models/user.model.js";
