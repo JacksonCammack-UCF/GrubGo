@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../utils/api_service.dart';
 import '../widgets/app_topbar.dart';
 import '../widgets/food_tile.dart';
+import '../utils/global_data.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,7 +12,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
   final ScrollController _scrollController = ScrollController();
   int currentPage = 1;
   int pageSize = 5;
@@ -30,7 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> foods = [];
   bool loading = true;
 
-  // Load all foods from backend
   Future<void> loadFoods() async {
     setState(() => loading = true);
 
@@ -56,7 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
     loadFoods();
   }
 
-  // Add Food Popup
   void openAddFoodDialog() {
     final nameCtrl = TextEditingController();
     final typeCtrl = TextEditingController();
@@ -82,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               double? priceValue = double.tryParse(priceCtrl.text.trim());
               if (priceValue == null || priceValue <= 0) {
-                setPop(() => error = "Price must be a valid number > 0.");
+                setPop(() => error = "Price must be valid.");
                 return;
               }
 
@@ -90,12 +88,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 "name": nameCtrl.text.trim(),
                 "price": priceValue,
                 "category": typeCtrl.text.trim(),
-                "imageUrl": imgCtrl.text.trim().isEmpty
-                    ? "https://via.placeholder.com/150"
-                    : imgCtrl.text.trim(),
+                "imageUrl": imgCtrl.text.trim(),
                 "inStock": inStock,
               };
-
 
               setPop(() {
                 localLoading = true;
@@ -119,7 +114,6 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text("Add Food Item"),
               content: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextField(
                       controller: nameCtrl,
@@ -131,14 +125,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     TextField(
                       controller: priceCtrl,
+                      decoration: const InputDecoration(labelText: "Price"),
                       keyboardType: TextInputType.number,
-                      decoration:
-                      const InputDecoration(labelText: "Price (e.g. 4.99)"),
                     ),
                     TextField(
                       controller: imgCtrl,
-                      decoration: const InputDecoration(
-                          labelText: "Image URL (optional)"),
+                      decoration: const InputDecoration(labelText: "Image URL (optional)"),
                     ),
 
                     const SizedBox(height: 12),
@@ -149,9 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         const Text("In stock"),
                         Switch(
                           value: inStock,
-                          onChanged: (val) {
-                            setPop(() => inStock = val);
-                          },
+                          onChanged: (v) => setPop(() => inStock = v),
                         ),
                       ],
                     ),
@@ -159,10 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (error.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          error,
-                          style: const TextStyle(color: Colors.red),
-                        ),
+                        child: Text(error, style: const TextStyle(color: Colors.red)),
                       ),
                   ],
                 ),
@@ -176,13 +163,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: localLoading ? null : submit,
                   child: localLoading
                       ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ))
-                      : const Text("Add Food"),
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                      : const Text("Add"),
                 ),
               ],
             );
@@ -194,6 +179,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isAdmin = GlobalData.isAdmin;
+
     return Scaffold(
       appBar: const AppTopBar(),
 
@@ -205,7 +192,6 @@ class _HomeScreenState extends State<HomeScreen> {
           controller: _scrollController,
           padding: const EdgeInsets.all(16),
           children: [
-            // HEADER ROW
             Row(
               children: [
                 Text(
@@ -213,37 +199,37 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black87,
                   ),
                 ),
                 const Spacer(),
 
-                ElevatedButton(
-                  onPressed: openAddFoodDialog,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 10,
+                // ADMIN ONLY ADD FOOD BUTTON
+                if (isAdmin)
+                  ElevatedButton(
+                    onPressed: openAddFoodDialog,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                    child: const Text(
+                      "Add Food",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    "Add Food",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
               ],
             ),
 
             const SizedBox(height: 20),
 
-            // FOOD LIST
             for (final food in paginatedFoods)
               FoodTile(
                 food: food,
@@ -260,10 +246,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: currentPage > 1
                       ? () {
                     setState(() => currentPage--);
-
                     _scrollController.animateTo(
                       0,
-                      duration: const Duration(milliseconds: 300),
+                      duration:
+                      const Duration(milliseconds: 300),
                       curve: Curves.easeOut,
                     );
                   }
@@ -281,10 +267,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: currentPage < totalPages
                       ? () {
                     setState(() => currentPage++);
-
                     _scrollController.animateTo(
                       0,
-                      duration: const Duration(milliseconds: 300),
+                      duration:
+                      const Duration(milliseconds: 300),
                       curve: Curves.easeOut,
                     );
                   }

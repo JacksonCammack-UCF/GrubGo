@@ -8,6 +8,7 @@ class GlobalData {
   static String email = '';
   static String phone = '';
   static int points = 0;
+  static bool isAdmin = false;
 
   static void clear() {
     userId = '';
@@ -17,6 +18,7 @@ class GlobalData {
     email = '';
     phone = '';
     points = 0;
+    isAdmin = false;
   }
 
   static void setUser(Map<String, dynamic> user) {
@@ -27,5 +29,6 @@ class GlobalData {
     email = user["email"] ?? "";
     phone = user["phone"] ?? "";
     points = user["points"] ?? 0;
+    isAdmin = user["isAdmin"] ?? false;
   }
 }

@@ -90,16 +90,22 @@ class APIService {
     try {
       final res = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-id": GlobalData.userId,
+        },
         body: jsonEncode(body),
       );
 
-      return res.statusCode == 200 || res.statusCode == 201;
+      print("STATUS: ${res.statusCode}");
+      print("BODY: ${res.body}");
+
+      return res.statusCode == 201;
     } catch (e) {
+      print("ERROR: $e");
       return false;
     }
   }
-
 // DELETE FOOD
   static Future<bool> deleteFood(String foodId) async {
     final url = Uri.parse("$baseURL/foods/$foodId");

@@ -58,6 +58,12 @@ class _FoodTileState extends State<FoodTile> {
   Widget build(BuildContext context) {
     final food = widget.food;
     final bool inStock = food["inStock"] == true;
+    final bool isAdmin = GlobalData.isAdmin;
+
+    String image = food["imageUrl"] ?? "";
+    if (image.isNotEmpty && !image.startsWith("http")) {
+      image = "http://10.0.2.2:5050/images/menu/$image";
+    }
 
     return Stack(
       alignment: Alignment.center,
@@ -80,10 +86,9 @@ class _FoodTileState extends State<FoodTile> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: (food["imageUrl"] != null &&
-                        food["imageUrl"].toString().isNotEmpty)
+                    child: (image.isNotEmpty)
                         ? Image.network(
-                      food["imageUrl"],
+                      image,
                       width: 56,
                       height: 56,
                       fit: BoxFit.cover,
@@ -131,38 +136,41 @@ class _FoodTileState extends State<FoodTile> {
 
               const SizedBox(height: 10),
 
-              // ENABLE / DISABLE STOCK SWITCH
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    inStock ? "In stock" : "Out of stock",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: inStock ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold,
+              // ADMIN ONLY STOCK SWITCH
+              if (isAdmin)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      inStock ? "In stock" : "Out of stock",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: inStock ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
 
-                  stockLoading
-                      ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                      : Switch(
-                    value: inStock,
-                    onChanged: toggleStock,
-                  ),
-                ],
-              ),
+                    stockLoading
+                        ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                        : Switch(
+                      value: inStock,
+                      onChanged: toggleStock,
+                    ),
+                  ],
+                )
+              else
+                const SizedBox(height: 10),
 
               const SizedBox(height: 10),
 
-              // BUTTONS
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
+                  // ADD TO CART
                   IconButton(
                     iconSize: 26,
                     icon: adding
@@ -176,83 +184,91 @@ class _FoodTileState extends State<FoodTile> {
                     onPressed: adding || !inStock ? null : addToCart,
                   ),
 
-                  IconButton(
-                    iconSize: 26,
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () async {
-                      showDialog(
-                        context: context,
-                        builder: (ctx) {
-                          return AlertDialog(
-                            title: const Text(
-                              "Delete Food Item",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            content: Text(
-                              "Are you sure you want to delete \"${food["name"]}\"?\nThis action cannot be undone.",
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(ctx);
-                                },
-                                child: const Text(
-                                  "Cancel",
-                                  style: TextStyle(color: Colors.black54),
-                                ),
+                  // DELETE ONLY IF ADMIN
+                  if (isAdmin)
+                    IconButton(
+                      iconSize: 26,
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () async {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) {
+                            return AlertDialog(
+                              title: const Text(
+                                "Delete Food Item",
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-
-                              TextButton(
-                                onPressed: () async {
-                                  Navigator.pop(ctx);
-
-                                  final ok = await APIService.deleteFood(food["_id"]);
-
-                                  if (ok) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text("${food["name"]} deleted."),
-                                        duration: const Duration(seconds: 2),
-                                      ),
-                                    );
-
-                                    if (widget.onDelete != null) widget.onDelete!();
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text("Failed to delete item."),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: const Text(
-                                  "Delete Item",
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.bold,
+                              content: Text(
+                                "Are you sure you want to delete \"${food["name"]}\"?\nThis action cannot be undone.",
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(ctx);
+                                  },
+                                  child: const Text(
+                                    "Cancel",
+                                    style: TextStyle(color: Colors.black54),
                                   ),
                                 ),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  ),
+
+                                TextButton(
+                                  onPressed: () async {
+                                    Navigator.pop(ctx);
+
+                                    final ok = await APIService.deleteFood(food["_id"]);
+
+                                    if (ok) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content:
+                                          Text("${food["name"]} deleted."),
+                                          duration:
+                                          const Duration(seconds: 2),
+                                        ),
+                                      );
+
+                                      if (widget.onDelete != null)
+                                        widget.onDelete!();
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content:
+                                          Text("Failed to delete item."),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: const Text(
+                                    "Delete Item",
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
                 ],
               ),
 
+              // LABELS
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     "Add to Cart",
                     style: TextStyle(fontSize: 11, color: Colors.black54),
                   ),
-                  Text(
-                    "Delete Item",
-                    style: TextStyle(fontSize: 11, color: Colors.black54),
-                  ),
+                  if (isAdmin)
+                    const Text(
+                      "Delete Item",
+                      style: TextStyle(fontSize: 11, color: Colors.black54),
+                    ),
                 ],
               ),
             ],
@@ -262,7 +278,8 @@ class _FoodTileState extends State<FoodTile> {
         if (!inStock)
           Positioned(
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 40),
+              padding:
+              const EdgeInsets.symmetric(vertical: 35, horizontal: 40),
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.65),
                 borderRadius: BorderRadius.circular(10),
