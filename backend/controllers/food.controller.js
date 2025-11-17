@@ -22,6 +22,10 @@ export const createFood = async(req, res) =>{
             return  res.status(400).json({success: false, message: "Name and category are required and must be non-empty strings."});
         }
 
+        if (price === null || price === undefined) {
+        return res.status(400).json({ success: false, message: "Price is required and must be a non-negative number." });
+        }
+
         const numericPrice = Number(price);
         if (!Number.isFinite(numericPrice) || numericPrice < 0) {
         return res.status(400).json({ success: false, message: "Price is required and must be a non-negative number."});

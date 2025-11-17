@@ -1,11 +1,11 @@
 // backend/utils/authHelpers.js
 import mongoose from "mongoose";
-import User from  "../models/user.model.js";
+import User from "../models/user.model.js";
 
 export const getAdminFromRequest = async (req) => {
     const adminId = req.header("x-admin-id");
 
-    if (!adminId || !mongoose.Types.ObjectId.isValid(adminId)) {
+    if(!adminId || !mongoose.Types.ObjectId.isValid(adminId)) {
         return {ok: false, status: 401, message: "Invalid or missing admin ID in headers."};
     }
 
