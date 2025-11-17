@@ -1,4 +1,4 @@
-// backend/middleware/auth.middleware.js
+// backend/middlewares/auth.middleware.js
 import { getAdminFromRequest } from "../utils/authHelpers.js";
 
 export const verifyAdmin = async (req, res, next) => {
