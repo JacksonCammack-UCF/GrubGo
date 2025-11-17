@@ -1,3 +1,4 @@
+// backend/utils/hashData.js
 import bcrypt from "bcrypt";
 
 export const hashData = async (data, saltRounds = 10) => {
