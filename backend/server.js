@@ -11,6 +11,9 @@ const app = express();
 app.use(cors());
 app.use(express.json()); // allows us to accept json data in body, PARSE!
 
+// for images
+app.use("/images", express.static("images"));
+
 // Modify Users
 app.use("/api/users", userRoutes);
 
