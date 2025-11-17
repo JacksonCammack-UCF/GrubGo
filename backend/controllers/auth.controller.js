@@ -139,46 +139,76 @@ export const verifyEmailOTP = async ({ userId, otp }) => {
   }
 };
 
-// 3. Verify 2FA OTP (after login)
 export const verify2FAOTP = async ({ userId, otp }) => {
   try {
     if (!userId || !otp) {
       throw new Error("Empty OTP details are not allowed!");
     }
 
-    const record = await UserOTPVerification.findOne({userId,purpose: "TWO_FACTOR_AUTH"}).sort({createdAt: -1});
+    const record = await UserOTPVerification.findOne({
+      userId,
+      purpose: "TWO_FACTOR_AUTH"
+    }).sort({ createdAt: -1 });
+
     if (!record) {
-      throw new Error( "Account record doesn't exist or has been verified already. Please request again." );
+      throw new Error("Account record doesn't exist or has been verified already. Please request again.");
     }
 
     if (record.expiresAt < Date.now()) {
       await UserOTPVerification.deleteMany({ userId, purpose: "TWO_FACTOR_AUTH" });
+
       const user = await User.findById(userId).select("email");
-      if (!user) {
-        throw new Error("User not found for resending OTP.");
-      }
-      const emailData = await sendOTPVerificationEmail({_id: userId, email: user.email, purpose: "TWO_FACTOR_AUTH"});
-      return { status: "RESEND", message: "OTP has expired. A new OTP has been sent to your email.", data: emailData };
+      if (!user) throw new Error("User not found for resending OTP.");
+
+      const emailData = await sendOTPVerificationEmail({
+        _id: userId,
+        email: user.email,
+        purpose: "TWO_FACTOR_AUTH"
+      });
+
+      return {
+        status: "RESEND",
+        message: "OTP has expired. A new OTP has been sent to your email.",
+        data: emailData
+      };
     }
 
-    if(record.attempts >= MAX_OTP_ATTEMPTS){
-      await UserOTPVerification.deleteMany({userId, purpose: "TWO_FACTOR_AUTH"});
+    if (record.attempts >= MAX_OTP_ATTEMPTS) {
+      await UserOTPVerification.deleteMany({ userId, purpose: "TWO_FACTOR_AUTH" });
+
       const user = await User.findById(userId).select("email");
-      if (!user) {
-        throw new Error("User not found for resending OTP.");
-      }      
-      const emailData = await sendOTPVerificationEmail({_id: userId, email: user.email, purpose: "TWO_FACTOR_AUTH"});
-      return { status: "RESEND", message: "Too many incorrect attempts. A new OTP has been sent to your email.", data: emailData };
+      if (!user) throw new Error("User not found for resending OTP.");
+
+      const emailData = await sendOTPVerificationEmail({
+        _id: userId,
+        email: user.email,
+        purpose: "TWO_FACTOR_AUTH"
+      });
+
+      return {
+        status: "RESEND",
+        message: "Too many incorrect attempts. A new OTP has been sent to your email.",
+        data: emailData
+      };
     }
-    await validateOtpRecord({ record: record, plainOtp: otp });
-    await UserOTPVerification.deleteMany({ userId, purpose: "TWO_FACTOR_AUTH"});
+
+    await validateOtpRecord({ record, plainOtp: otp });
+    await UserOTPVerification.deleteMany({ userId, purpose: "TWO_FACTOR_AUTH" });
 
     const user = await User.findById(userId).select("-password");
-    if (!user) {
-      throw new Error("User not found!");
-    }
+    if (!user) throw new Error("User not found!");
 
-    return { message: "2FA OTP verified successfully!", data: user };
+    // ⭐ ADD CART TO RESPONSE
+    const userWithCart = {
+      ...user.toObject(),
+      cart: user.cart || []   // ensure frontend always receives cart array
+    };
+
+    return {
+      message: "2FA OTP verified successfully!",
+      data: userWithCart
+    };
+
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));
   }

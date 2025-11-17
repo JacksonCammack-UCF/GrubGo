@@ -1,8 +1,12 @@
 import React from "react";
 import { X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Sidebar({ isOpen, onClose }) {
+
+  const { isAuthenticated, user } = useAuth();
+
   return (
     <>
       {isOpen && (
@@ -18,47 +22,65 @@ function Sidebar({ isOpen, onClose }) {
           isOpen ? "translate-x-0" : "-translate-x-full"
         } transition-transform duration-300 ease-in-out z-50 flex flex-col`}
       >
-        {/* Sign Up / Log In buttons */}
-        <ul className="p-4 space-y-3">
-          <li>
-            <Link
-              to="/signup"
-              onClick={onClose}
-              className="block w-full text-center bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-semibold transition"
-            >
-              Sign up
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/login"
-              onClick={onClose}
-              className="block w-full text-center bg-gray-100 hover:bg-gray-200 text-black py-3 rounded-lg font-semibold transition"
-            >
-              Log in
-            </Link>
-          </li>
-        </ul>
 
-        {/* Separator line */}
-        <hr className="border-gray-300 my-2 mx-4" />
+        {/* ⭐ SIGN UP / LOGIN (only when NOT logged in) */}
+        {!isAuthenticated && (
+          <ul className="p-4 space-y-3">
+            <li>
+              <Link
+                to="/signup"
+                onClick={onClose}
+                className="block w-full text-center bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-semibold transition"
+              >
+                Sign up
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/login"
+                onClick={onClose}
+                className="block w-full text-center bg-gray-100 hover:bg-gray-200 text-black py-3 rounded-lg font-semibold transition"
+              >
+                Log in
+              </Link>
+            </li>
+          </ul>
+        )}
 
-        {/* Plain sidebar links */}
+        {/* ⭐ Separator (only show if logged OUT) */}
+        {!isAuthenticated && <hr className="border-gray-300 my-2 mx-4" />}
+
+        {/* ⭐ SIDEBAR NAVIGATION */}
         <div className="p-4 flex flex-col space-y-1">
+
+          {/* ⭐ When logged IN, show Home link */}
+          {isAuthenticated && (
+            <Link
+              to="/"
+              onClick={onClose}
+              className="text-black text-left px-4 py-1 hover:bg-gray-100 rounded transition"
+            >
+              Home
+            </Link>
+          )}
+
+          {/* Shared navigation items */}
           <Link
-            to="/restaurants"
+            to="/menu"
             onClick={onClose}
             className="text-black text-left px-4 py-1 hover:bg-gray-100 rounded transition"
           >
-            View Restaurants
+            View Menu
           </Link>
+
           <Link
-            to="/"
+            to="/about"
             onClick={onClose}
             className="text-black text-left px-4 py-1 hover:bg-gray-100 rounded transition"
           >
-            Apply to be a Vendor
+            About Us
           </Link>
+
           <Link
             to="/contact"
             onClick={onClose}
@@ -66,6 +88,26 @@ function Sidebar({ isOpen, onClose }) {
           >
             Contact Us
           </Link>
+
+          {/* ⭐ ADMIN-ONLY LINKS */}
+          {isAuthenticated && user?.isAdmin && (
+            <>
+              <hr className="border-gray-300 my-2 mx-4" />
+
+              <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Admin
+              </p>
+
+              <Link
+                to="/admin"
+                onClick={onClose}
+                className="text-black text-left px-4 py-1 hover:bg-gray-100 rounded transition font-semibold"
+              >
+                Admin Dashboard
+              </Link>
+            </>
+          )}
+
         </div>
       </div>
     </>

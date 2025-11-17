@@ -129,7 +129,7 @@ export const doLogin = async (req, res) => {
 
     const user = await User.findOne(query);
     if (!user) {
-        return res.status(400).json({ success: false, message: "Email / Password incorrect." });
+      return res.status(400).json({ success: false, message: "Email / Password incorrect." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -137,6 +137,7 @@ export const doLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email / Password incorrect." });
     }
 
+    // If email NOT verified → send email verification OTP
     if (!user.isEmailVerified) {
       const emailData = await sendOTPVerificationEmail({
         _id: user._id,
@@ -148,10 +149,15 @@ export const doLogin = async (req, res) => {
         success: true,
         status: "PENDING",
         message: "Email not verified. A new verification code has been sent to your email.",
-        data: emailData 
+        data: {
+          ...emailData,
+          name: user.name || user.username,
+          isAdmin: user.isAdmin || false,   // ⭐ added here
+        }
       });
     }
 
+    // Email IS verified → send 2FA OTP
     const emailData = await sendOTPVerificationEmail({
       _id: user._id,
       email: user.email,
@@ -162,8 +168,13 @@ export const doLogin = async (req, res) => {
       success: true,
       status: "PENDING",
       message: "Credentials valid. 2FA OTP sent to email.",
-      data: emailData,
+      data: {
+        ...emailData,
+        name: user.name || user.username,
+        isAdmin: user.isAdmin || false,   // ⭐ added here
+      }
     });
+
   } catch (error) {
     console.log("Error in doLogin:", error.message);
     return res.status(500).json({ success: false, message: "Server Error during login." });
@@ -205,3 +216,86 @@ export const updateCart = async (req, res) =>{
   }
 }
 
+// GET CART (safe addition — does NOT modify teammate logic)
+export const getCart = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid user ID" });
+  }
+
+  try {
+    const user = await User.findById(id).select("cart");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ success: true, data: user.cart });
+  } catch (error) {
+    console.error("Error fetching cart:", error.message);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server Error" });
+  }
+};
+
+export const updateUserProfile = async (req, res) => {
+  const { id } = req.params;
+  const { firstName } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: "Invalid user ID." });
+  }
+
+  if (!firstName || typeof firstName !== "string") {
+    return res.status(400).json({ success: false, message: "Invalid name." });
+  }
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { firstName: firstName.trim() },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while updating profile.",
+    });
+  }
+};
+
+export const getUserById = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: "Invalid user ID" });
+  }
+
+  try {
+    const user = await User.findById(id).select("-password");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};

@@ -1,7 +1,7 @@
 // backend/routes/food.route.js
 import express from "express";
 
-import { createFood, deleteFood, getFoods, updateFood } from "../controllers/food.controller.js";
+import { createFood, deleteFood, getFoods, updateFood, getFoodById } from "../controllers/food.controller.js";
 
 import { verifyAdmin } from "../middlewares/auth.middleware.js";
 
@@ -17,5 +17,8 @@ router.post("/", verifyAdmin, createFood)
 router.put("/:id", verifyAdmin, updateFood)
 // DELETE PRODUCT
 router.delete("/:id", verifyAdmin, deleteFood)
+
+// GET PRODUCT BY ID
+router.get("/:id", getFoodById);
 
 export default router;

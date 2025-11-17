@@ -1,11 +1,17 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
 export default function Signup() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
+    username: "",
     email: "",
+    phone: "",
     password: "",
   });
 
@@ -20,10 +26,44 @@ export default function Signup() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Signup submitted:", formData);
-    // TODO: connect to backend/signup API
+
+    try {
+      const response = await fetch("http://localhost:5050/api/users/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        alert(data.message || "Signup failed.");
+        return;
+      }
+
+      // At this point, backend did:
+      // - created user
+      // - sent EMAIL_VERIFICATION OTP
+      // and returned { success: true, status: "PENDING", data: { userId, email, ... } }
+
+      if (data.status === "PENDING" && data.data?.userId) {
+        // Go to verify-email page, pass userId & email in route state
+        navigate("/verify-email", {
+          state: {
+            userId: data.data.userId,
+            email: formData.email,
+          },
+        });
+      } else {
+        // fallback
+        alert("Signup succeeded, but OTP flow did not return expected data.");
+      }
+    } catch (err) {
+      console.error("Signup error:", err);
+      alert("Server error. Please try again later.");
+    }
   };
 
   return (
@@ -40,19 +80,46 @@ export default function Signup() {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name */}
+
+            {/* First Name */}
             <div>
-              <label
-                htmlFor="name"
-                className="block text-gray-700 font-medium mb-1"
-              >
-                Name
+              <label className="block text-gray-700 font-medium mb-1">
+                First Name
               </label>
               <input
                 type="text"
-                name="name"
-                id="name"
-                value={formData.name}
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              />
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Last Last
+              </label>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              />
+            </div>
+
+            {/* Username */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Username
+              </label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
@@ -61,17 +128,28 @@ export default function Signup() {
 
             {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-gray-700 font-medium mb-1"
-              >
+              <label className="block text-gray-700 font-medium mb-1">
                 Email
               </label>
               <input
                 type="email"
                 name="email"
-                id="email"
                 value={formData.email}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
@@ -80,17 +158,13 @@ export default function Signup() {
 
             {/* Password */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-gray-700 font-medium mb-1"
-              >
+              <label className="block text-gray-700 font-medium mb-1">
                 Password
               </label>
               <div className="flex items-center border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-yellow-400">
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  id="password"
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -115,7 +189,6 @@ export default function Signup() {
             </button>
           </form>
 
-          {/* Link to login */}
           <p className="mt-4 text-center text-gray-600">
             Already have an account?{" "}
             <a href="/login" className="text-yellow-600 hover:underline">

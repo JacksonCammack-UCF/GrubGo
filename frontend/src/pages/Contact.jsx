@@ -3,110 +3,109 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
 export default function Contact() {
-  const [formData, setFormData] = useState({
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  const [form, setForm] = useState({
     name: "",
     email: "",
     message: "",
   });
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Message sent:", formData);
-    // TODO: Connect this to backend or email service
+    alert("Message submitted (functionality coming soon)");
   };
 
   return (
     <div className="relative min-h-screen bg-gray-50">
-      {/* Navbar & Sidebar */}
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
-      {/* Contact Form Section */}
-      <div className="flex items-center justify-center pt-32 px-4">
-        <div className="w-full max-w-lg bg-white p-8 rounded-2xl shadow-lg">
-          <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
-            Contact Us
+      <div className="pt-28 px-6 max-w-4xl mx-auto pb-20">
+
+        <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
+          Contact Us
+        </h1>
+
+        {/* Contact Card */}
+        <div className="bg-white rounded-2xl shadow-md p-8 mb-12">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            We're Here to Help
           </h2>
-          <p className="text-center text-gray-600 mb-8">
-            Have questions or feedback? We'd love to hear from you!
+          <p className="text-gray-700 mb-6">
+            Have a question, suggestion, or issue? Send us a message and our team
+            will get back to you as soon as possible.
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name */}
+          {/* Contact Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label
-                htmlFor="name"
-                className="block text-gray-700 font-medium mb-1"
-              >
-                Name
-              </label>
+              <label className="text-gray-600 mb-1 block">Name</label>
               <input
                 type="text"
-                id="name"
                 name="name"
-                value={formData.name}
+                value={form.name}
                 onChange={handleChange}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black"
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
 
-            {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-gray-700 font-medium mb-1"
-              >
-                Email
-              </label>
+              <label className="text-gray-600 mb-1 block">Email</label>
               <input
                 type="email"
-                id="email"
                 name="email"
-                value={formData.email}
+                value={form.email}
                 onChange={handleChange}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black"
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
 
-            {/* Message */}
             <div>
-              <label
-                htmlFor="message"
-                className="block text-gray-700 font-medium mb-1"
-              >
-                Message
-              </label>
+              <label className="text-gray-600 mb-1 block">Message</label>
               <textarea
-                id="message"
                 name="message"
-                value={formData.message}
+                value={form.message}
                 onChange={handleChange}
-                rows="5"
+                rows="4"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black"
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
               ></textarea>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition"
+              className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
             >
               Send Message
             </button>
           </form>
+        </div>
+
+        {/* Additional Contact Info */}
+        <div className="bg-white rounded-2xl shadow-md p-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            Other Ways to Reach Us
+          </h2>
+
+          <p className="text-gray-700 mb-2">
+            <strong>Email:</strong> support@grubgo.com
+          </p>
+
+          <p className="text-gray-700 mb-2">
+            <strong>Phone:</strong> (555) 123-4567
+          </p>
+
+          <p className="text-gray-700">
+            <strong>Hours:</strong> Mon-Fri, 9 AM – 6 PM
+          </p>
         </div>
       </div>
     </div>
