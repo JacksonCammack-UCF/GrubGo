@@ -2,9 +2,18 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
+// ⭐ NEW: import cart context
+import { useCart } from "../context/CartContext";
+
 export default function Menu() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  // ⭐ Access cart functions
+  const { addToCart } = useCart();
+
+  // ⭐ Small animation state
+  const [clickedId, setClickedId] = useState(null);
 
   // ⭐ Backend data
   const [foods, setFoods] = useState([]);
@@ -38,25 +47,32 @@ export default function Menu() {
     fetchFoods();
   }, [page]);
 
+  // ⭐ Handle Add to Cart with animation
+  const handleAdd = (food) => {
+    addToCart(food);
+    setClickedId(food._id);
+
+    setTimeout(() => {
+      setClickedId(null);
+    }, 300);
+  };
+
   return (
     <div className="relative min-h-screen bg-linear-to-b from-gray-50 to-gray-200">
-      {/* Navbar & Sidebar */}
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
-      {/* Food Items */}
       <div className="pt-28 pb-16 px-6">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-gray-800 mb-12 text-center">
             Popular Items Near You
           </h2>
 
-          {/* ⭐ Loading */}
           {loading && (
             <p className="text-center text-gray-600 text-lg">Loading...</p>
           )}
 
-          {/* ⭐ Food Grid */}
+          {/* Food Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {!loading &&
               foods.map((food) => (
@@ -80,7 +96,6 @@ export default function Menu() {
                       {food.name}
                     </h3>
 
-                    {/* Using category as description since backend has no description */}
                     <p className="text-gray-500 mb-3 text-sm">
                       {food.category}
                     </p>
@@ -95,25 +110,31 @@ export default function Menu() {
                       </span>
                     </div>
 
-                    <button className="w-full bg-yellow-500 text-black font-semibold px-6 py-2 rounded-full hover:bg-yellow-400 transition">
-                      Add to Cart
+                    {/* ⭐ Add to Cart with animation */}
+                    <button
+                      onClick={() => handleAdd(food)}
+                      className={`w-full bg-yellow-500 text-black font-semibold px-6 py-2 rounded-full transition 
+                        ${clickedId === food._id ? "scale-90 bg-yellow-400" : "hover:bg-yellow-400"}
+                      `}
+                      style={{ transitionDuration: "150ms" }}
+                    >
+                      {clickedId === food._id ? "Added!" : "Add to Cart"}
                     </button>
                   </div>
                 </div>
               ))}
           </div>
 
-          {/* ⭐ Empty state */}
+          {/* Empty State */}
           {!loading && foods.length === 0 && (
             <p className="text-center text-gray-600 text-lg mt-10">
               No items found.
             </p>
           )}
 
-          {/* ⭐ Pagination Controls */}
+          {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-10">
-              {/* Prev */}
               <button
                 disabled={page === 1}
                 onClick={() => setPage((p) => p - 1)}
@@ -126,7 +147,6 @@ export default function Menu() {
                 Prev
               </button>
 
-              {/* Page Buttons */}
               {[...Array(totalPages)].map((_, i) => (
                 <button
                   key={i}
@@ -141,7 +161,6 @@ export default function Menu() {
                 </button>
               ))}
 
-              {/* Next */}
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => p + 1)}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Menu } from "lucide-react";
+import { Menu, ShoppingCart } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext"; // ⭐ NEW
 
 export default function Navbar({ onMenuClick }) {
   const [scrolled, setScrolled] = useState(false);
@@ -9,11 +10,21 @@ export default function Navbar({ onMenuClick }) {
   const navigate = useNavigate();
 
   const { isAuthenticated, user, logout } = useAuth();
+  const { cart } = useCart(); // ⭐ NEW — access cart length
 
-  // ⭐ NEW — for the profile dropdown
+  const [cartBump, setCartBump] = useState(false); // ⭐ controls scale animation
+
+  // ⭐ Trigger bump whenever cart changes
+  useEffect(() => {
+    if (cart.length === 0) return;
+    setCartBump(true);
+
+    const timer = setTimeout(() => setCartBump(false), 300);
+    return () => clearTimeout(timer);
+  }, [cart]);
+
+  // Profile dropdown
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // ⭐ NEW — close dropdown when clicking outside
   useEffect(() => {
     const handleClick = (e) => {
       if (
@@ -28,10 +39,9 @@ export default function Navbar({ onMenuClick }) {
     return () => document.removeEventListener("click", handleClick);
   }, []);
 
+  // Scroll background
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -52,7 +62,7 @@ export default function Navbar({ onMenuClick }) {
         scrolled ? "bg-white shadow-md" : "bg-transparent"
       }`}
     >
-      {/* Left: menu + logo */}
+      {/* Left side */}
       <div className="flex items-center space-x-4">
         <button
           onClick={onMenuClick}
@@ -70,39 +80,53 @@ export default function Navbar({ onMenuClick }) {
         </Link>
       </div>
 
-      {/* Right section */}
-      <div className="flex items-center space-x-4 ml-auto">
+      {/* Right side */}
+      <div className="flex items-center space-x-5 ml-auto">
 
-        {/* NOT LOGGED IN → signup/login */}
+        {/* ⭐ CART ICON (always visible when logged in) */}
+        {isAuthenticated && (
+          <button
+            className={`relative transition-transform ${
+              cartBump ? "scale-110" : "scale-100"
+            }`}
+            onClick={() => navigate("/cart")}
+          >
+            <ShoppingCart
+              size={28}
+              className={isHome && !scrolled ? "text-white" : "text-black"}
+            />
+
+            {/* ⭐ Cart badge */}
+            {cart.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-yellow-500 text-black text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                {cart.length}
+              </span>
+            )}
+          </button>
+        )}
+
+        {/* NOT LOGGED IN */}
         {!isAuthenticated && !hideButtons && (
           <>
             <Link
               to="/signup"
-              className={`px-5 py-2.5 rounded-lg font-semibold transition ${
-                scrolled
-                  ? "bg-black text-white hover:bg-gray-800"
-                  : "bg-black text-white hover:bg-gray-800"
-              }`}
+              className="px-5 py-2.5 rounded-lg font-semibold bg-black text-white hover:bg-gray-800 transition"
             >
               Sign Up
             </Link>
+
             <Link
               to="/login"
-              className={`px-5 py-2.5 rounded-lg font-semibold transition ${
-                scrolled
-                  ? "bg-gray-100 text-black hover:bg-gray-200"
-                  : "bg-gray-100 text-black hover:bg-gray-200"
-              }`}
+              className="px-5 py-2.5 rounded-lg font-semibold bg-gray-100 text-black hover:bg-gray-200 transition"
             >
               Log In
             </Link>
           </>
         )}
 
-        {/* LOGGED IN → profile icon + dropdown */}
+        {/* LOGGED IN → profile */}
         {isAuthenticated && (
           <div className="relative">
-            {/* ⭐ Profile icon button */}
             <button
               id="profile-menu-btn"
               className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center"
@@ -113,14 +137,11 @@ export default function Navbar({ onMenuClick }) {
               </span>
             </button>
 
-            {/* ⭐ DROPDOWN MENU */}
             {isMenuOpen && (
               <div
                 id="profile-dropdown"
                 className="absolute right-0 mt-3 w-48 bg-white shadow-lg rounded-xl p-3 z-50 animate-fadeIn"
               >
-
-                {/* ⭐ ADMIN ONLY — show admin dashboard */}
                 {user?.isAdmin && (
                   <Link
                     to="/admin"
@@ -136,12 +157,14 @@ export default function Navbar({ onMenuClick }) {
                 >
                   Cart
                 </Link>
+
                 <Link
                   to="/orders"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
                 >
                   Orders
                 </Link>
+
                 <Link
                   to="/settings"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
@@ -163,7 +186,6 @@ export default function Navbar({ onMenuClick }) {
             )}
           </div>
         )}
-
       </div>
     </nav>
   );

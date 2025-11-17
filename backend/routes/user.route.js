@@ -1,11 +1,14 @@
 // backend/routes/user.route.js
 import express from "express";
-import { deleteUser, doLogin, doSignup, getUsers, updateCart } from "../controllers/user.controller.js";
+import { deleteUser, doLogin, doSignup, getUsers, updateCart, getCart } from "../controllers/user.controller.js";
 
 const router = express.Router();
 
 // GET USERS
 router.get("/", getUsers);
+
+// GET CART
+router.get("/cart/:id", getCart);
 
 // Delete user
 router.delete("/:id", deleteUser);

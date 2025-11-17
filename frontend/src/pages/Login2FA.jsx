@@ -5,12 +5,15 @@ import Sidebar from "../components/Sidebar";
 
 // ⭐ import auth context
 import { useAuth } from "../context/AuthContext";
+// ⭐ import cart context
+import { useCart } from "../context/CartContext";
 
 export default function Login2FA() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const { login } = useAuth();
+  const { setCart } = useCart();   // ⭐ NEW
 
   const userId = location.state?.userId;
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -76,24 +79,24 @@ export default function Login2FA() {
       // ⭐ RAW backend user
       const backendUser = data.data;
 
+      // ⭐ Format auth user
       const formattedUser = {
         id: backendUser._id,
-        name: backendUser.firstName,   // NEW — use firstName
+        name: backendUser.firstName,
         email: backendUser.email,
         role: backendUser.isAdmin ? "admin" : "user",
         isAdmin: backendUser.isAdmin,
       };
 
-
       // ⭐ Save login
       login(formattedUser);
 
+      // ⭐ Load their cart from backend
+      setCart(backendUser.cart || []);
+
       // ⭐ Redirect
-      if (backendUser.isAdmin) {
-        navigate("/admin");
-      } else {
-        navigate("/menu");
-      }
+      navigate(backendUser.isAdmin ? "/admin" : "/menu");
+
     } catch (err) {
       console.error(err);
       setError("Server error. Try again later.");

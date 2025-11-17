@@ -216,3 +216,30 @@ export const updateCart = async (req, res) =>{
   }
 }
 
+// GET CART (safe addition — does NOT modify teammate logic)
+export const getCart = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid user ID" });
+  }
+
+  try {
+    const user = await User.findById(id).select("cart");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ success: true, data: user.cart });
+  } catch (error) {
+    console.error("Error fetching cart:", error.message);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server Error" });
+  }
+};
