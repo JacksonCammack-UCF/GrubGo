@@ -35,7 +35,7 @@ export const getOrder = async(req, res) =>{
         for (let i = 0; i < orderLength; i++) {
             const item = newOrder.items[i];
             const foodID = item.foodId;
-            // from will probably not needed but fallback in case frontend forget to change specific ways of typing it
+            // Fallback: support both qty and quantity in case the frontend hasn't been updated yet
             const quantity = item.qty ?? item.quantity ?? 1;
             
             const food = await Food.findById(foodID);

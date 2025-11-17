@@ -18,12 +18,17 @@ export const createFood = async(req, res) =>{
     try {
         const {name, price, category, imageUrl, inStock} = req.body;
 
-        if (!name || price === undefined || price === null || !category) {
-            return  res.status(400).json({success: false, message: "Name, price and category are required!"});
+        if ( typeof name !== "string" || !name.trim() || typeof category !== "string" || !category.trim() ){
+            return  res.status(400).json({success: false, message: "Name and category are required and must be non-empty strings."});
+        }
+
+        const numericPrice = Number(price);
+        if (!Number.isFinite(numericPrice) || numericPrice < 0) {
+        return res.status(400).json({ success: false, message: "Price is required and must be a non-negative number."});
         }
         const foodData = {
             name: name.trim(),
-            price,
+            price: numericPrice,
             category: category.trim(),
         };
 
