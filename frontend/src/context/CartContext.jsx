@@ -1,12 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 
+// ⭐ unified backend URL
+import API_BASE_URL from "../utils/api";
+
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
 
-  // ⭐ Local cart state (works offline or logged out)
+  // ------------------------------------------------------------------------------------
+  // LOCAL CART STATE (loads from localStorage)
+  // ------------------------------------------------------------------------------------
   const [cart, setCart] = useState(() => {
     try {
       const stored = localStorage.getItem("cart");
@@ -16,54 +21,52 @@ export const CartProvider = ({ children }) => {
     }
   });
 
-  // ⭐ ALWAYS keep localStorage up to date
+  // Always sync cart to localStorage
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  // ====================================================================================
-  // ⭐ Helper: Sync a SINGLE cart item to backend
-  // ====================================================================================
+  // ------------------------------------------------------------------------------------
+  // SYNC SINGLE ITEM TO BACKEND
+  // ------------------------------------------------------------------------------------
   const syncItemToBackend = async (foodId, quantity) => {
-  if (!isAuthenticated || !user?.id) return;
+    if (!isAuthenticated || !user?.id) return;
 
-  try {
-    await fetch(`http://localhost:5050/api/users/cart/${user.id}`, {
-      method: "POST",     // ⭐ your backend requires POST, not PATCH
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ foodId, quantity }),
-    });
-  } catch (err) {
-    console.error("Cart sync failed:", err);
-  }
-};
-
-
-  // ====================================================================================
-  // ⭐ addToCart — fully persistent
-  // ====================================================================================
-  const addToCart = (item) => {
-  setCart((prev) => {
-    const existing = prev.find((f) => f._id === item._id);
-
-    if (existing) {
-      return prev.map((f) =>
-        f._id === item._id ? { ...f, qty: f.qty + 1 } : f
-      );
+    try {
+      await fetch(`${API_BASE_URL}/users/cart/${user.id}`, {
+        method: "POST", // backend expects POST for cart update
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ foodId, quantity }),
+      });
+    } catch (err) {
+      console.error("Cart sync failed:", err);
     }
+  };
 
-    // add new item
-    return [...prev, { ...item, qty: 1 }];
-  });
+  // ------------------------------------------------------------------------------------
+  // ADD TO CART
+  // ------------------------------------------------------------------------------------
+  const addToCart = (item) => {
+    setCart((prev) => {
+      const existing = prev.find((f) => f._id === item._id);
 
-  // ⭐ sync AFTER state update, not inside setCart()
-  syncItemToBackend(item._id, 1);
-};
+      // If item already exists → increment qty
+      if (existing) {
+        return prev.map((f) =>
+          f._id === item._id ? { ...f, qty: f.qty + 1 } : f
+        );
+      }
 
+      // New item
+      return [...prev, { ...item, qty: 1 }];
+    });
 
-  // ====================================================================================
-  // ⭐ updateQuantity — fully persistent
-  // ====================================================================================
+    syncItemToBackend(item._id, 1);
+  };
+
+  // ------------------------------------------------------------------------------------
+  // UPDATE QUANTITY
+  // ------------------------------------------------------------------------------------
   const updateQuantity = (id, qty) => {
     if (qty <= 0) return removeFromCart(id);
 
@@ -78,32 +81,26 @@ export const CartProvider = ({ children }) => {
     });
   };
 
-  // ====================================================================================
-  // ⭐ removeFromCart — fully persistent
-  // ====================================================================================
+  // ------------------------------------------------------------------------------------
+  // REMOVE ITEM
+  // ------------------------------------------------------------------------------------
   const removeFromCart = (id) => {
     setCart((prev) => {
       const updated = prev.filter((item) => item._id !== id);
-      syncItemToBackend(id, 0); // backend interprets qty=0 as delete
+      syncItemToBackend(id, 0); // qty=0 means delete on backend
       return updated;
     });
   };
 
-  // ====================================================================================
-  // ⭐ clearCart — fully persistent
-  // ====================================================================================
+  // ------------------------------------------------------------------------------------
+  // CLEAR CART
+  // ------------------------------------------------------------------------------------
   const clearCart = () => {
     if (isAuthenticated && user?.id) {
-      // Clear each on backend
       cart.forEach((item) => syncItemToBackend(item._id, 0));
     }
     setCart([]);
   };
-
-  // ====================================================================================
-  // ⭐ When user logs in: Load backend cart → convert → store in cart
-  //    (Login2FA already passes formatted cart to setCart)
-  // ====================================================================================
 
   return (
     <CartContext.Provider
@@ -121,4 +118,4 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-export const useCart = () => useContext(CartContext);
+export const useCart = () => useContext(CCartContext);

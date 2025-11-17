@@ -4,6 +4,9 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { motion } from "framer-motion";
 
+// ⭐ CENTRALIZED API
+import API_BASE_URL from "../utils/api";
+
 export default function OrderSuccess() {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -22,7 +25,7 @@ export default function OrderSuccess() {
     const loadOrder = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5050/api/orders/order/${orderId}`
+          `${API_BASE_URL}/api/orders/order/${orderId}`
         );
 
         const data = await res.json();
@@ -71,7 +74,7 @@ export default function OrderSuccess() {
   }
 
   // ----------------------------------------------------
-  // CLEAN TAX CALCULATION (BACKEND STORES FACTOR 1.07)
+  // TAX (total - subtotal)
   // ----------------------------------------------------
   const taxAmount = order.total - order.subtotal;
 

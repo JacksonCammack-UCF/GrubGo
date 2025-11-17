@@ -5,6 +5,7 @@ import Sidebar from "../components/Sidebar";
 
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import API_BASE_URL from "../utils/api";   // ⭐ unified API base
 
 export default function Login2FA() {
   const navigate = useNavigate();
@@ -14,12 +15,13 @@ export default function Login2FA() {
   const { setCart } = useCart();
 
   const userId = location.state?.userId;
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const inputRefs = useRef([]);
 
+  // If userId missing → redirect back to login
   useEffect(() => {
     if (!userId) navigate("/login");
   }, [userId, navigate]);
@@ -44,12 +46,14 @@ export default function Login2FA() {
     }
   };
 
-  // ⭐ Convert backend cart
+  // ---------------------------------------------------------
+  // ⭐ Convert backend cart items → usable FE format
+  // ---------------------------------------------------------
   const enrichCart = async (backendCart) => {
     return await Promise.all(
       backendCart.map(async (item) => {
         try {
-          const res = await fetch(`http://localhost:5050/api/foods/${item.foodId}`);
+          const res = await fetch(`${API_BASE_URL}/foods/${item.foodId}`);
           const json = await res.json();
 
           if (!json.success || !json.data) return null;
@@ -70,8 +74,12 @@ export default function Login2FA() {
     ).then((items) => items.filter(Boolean));
   };
 
+  // ---------------------------------------------------------
+  // ⭐ SUBMIT OTP
+  // ---------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     const fullOtp = otp.join("");
 
@@ -81,7 +89,7 @@ export default function Login2FA() {
     }
 
     try {
-      const res = await fetch("http://localhost:5050/api/auth/verify-2fa-otp", {
+      const res = await fetch(`${API_BASE_URL}/auth/verify-2fa-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, otp: fullOtp }),
@@ -99,16 +107,16 @@ export default function Login2FA() {
         return;
       }
 
-      // ⭐ Minimal backend user
-      const base = data.data;
+      const base = data.data; // has _id only
 
-      // ⭐ FETCH FULL USER BEFORE LOGIN
-      const fullRes = await fetch(`http://localhost:5050/api/users/${base._id}`);
+      // ---------------------------------------------------------
+      // ⭐ NOW GET FULL USER PROFILE
+      // ---------------------------------------------------------
+      const fullRes = await fetch(`${API_BASE_URL}/users/${base._id}`);
       const fullJson = await fullRes.json();
 
-      const full = fullJson.data; // includes firstName, lastName, phone, points, etc.
+      const full = fullJson.data;
 
-      // ⭐ Format final user for auth context
       const formattedUser = {
         id: full._id,
         name: full.firstName,
@@ -120,22 +128,24 @@ export default function Login2FA() {
         lastName: full.lastName,
       };
 
-      // ⭐ Save to auth context
+      // Save to Auth Context
       login(formattedUser);
 
-      // ⭐ Load cart
+      // Load cart
       const enrichedCart = await enrichCart(full.cart || []);
       setCart(enrichedCart || []);
 
-      // ⭐ Redirect
+      // Redirect
       navigate(full.isAdmin ? "/admin" : "/menu");
-
     } catch (err) {
-      console.error(err);
+      console.error("2FA error:", err);
       setError("Server error. Try again later.");
     }
   };
 
+  // ---------------------------------------------------------
+  // RENDER UI
+  // ---------------------------------------------------------
   return (
     <div className="relative min-h-screen bg-gray-50">
       <Navbar onMenuClick={toggleSidebar} />
@@ -178,7 +188,6 @@ export default function Login2FA() {
               Verify
             </button>
           </form>
-
         </div>
       </div>
     </div>

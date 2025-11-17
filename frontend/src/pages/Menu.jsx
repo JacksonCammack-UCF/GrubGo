@@ -5,6 +5,9 @@ import Sidebar from "../components/Sidebar";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 
+// ⭐ CENTRALIZED API URL
+import API_BASE_URL from "../utils/api";
+
 export default function Menu() {
   // ============================
   // HOOKS — MUST ALWAYS RUN FIRST
@@ -30,14 +33,14 @@ export default function Menu() {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   // ==========================================================
-  // FETCH FOODS
+  // FETCH FOODS (uses API_BASE_URL)
   // ==========================================================
   useEffect(() => {
     const fetchFoods = async () => {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:5050/api/foods?page=${page}&limit=9`
+          `${API_BASE_URL}/api/foods?page=${page}&limit=9`
         );
         const data = await res.json();
 

@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
+import API_BASE_URL from "../utils/api";   // ⭐ unified API
 
 export default function Settings() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -15,19 +16,22 @@ export default function Settings() {
   const [saveMsg, setSaveMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ⭐ NEW: Sync user data from backend → ensures "points" always loads
+  // ----------------------------------------------------
+  // REFRESH USER DATA FROM BACKEND
+  // ----------------------------------------------------
   useEffect(() => {
     const loadFreshUser = async () => {
-      if (!user) return;
+      if (!user?.id && !user?._id) return;
 
       try {
         const res = await fetch(
-          `http://localhost:5050/api/users/${user.id || user._id}`
+          `${API_BASE_URL}/users/${user.id || user._id}`
         );
         const data = await res.json();
 
         if (res.ok && data.success) {
-          updateUser(data.data); // ⭐ merge fresh user into local auth
+          updateUser(data.data);
+          setFirstName(data.data.firstName || "");
         }
       } catch (err) {
         console.log("Could not refresh user profile:", err.message);
@@ -35,8 +39,11 @@ export default function Settings() {
     };
 
     loadFreshUser();
-  }, []);
+  }, []); // run once
 
+  // ----------------------------------------------------
+  // SAVE PROFILE
+  // ----------------------------------------------------
   const handleSave = async () => {
     if (!firstName.trim()) {
       setErrorMsg("Name cannot be empty.");
@@ -49,7 +56,7 @@ export default function Settings() {
       setSaveMsg("");
 
       const res = await fetch(
-        `http://localhost:5050/api/users/profile/${user.id || user._id}`,
+        `${API_BASE_URL}/users/profile/${user.id || user._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -63,7 +70,6 @@ export default function Settings() {
         throw new Error(data.message || "Failed to update profile.");
       }
 
-      // ⭐ Update local user with full data from backend
       updateUser({ ...user, firstName });
 
       setSaveMsg("Saved successfully!");
@@ -83,9 +89,7 @@ export default function Settings() {
       <div className="pt-28 px-6 max-w-3xl mx-auto pb-20">
         <h1 className="text-4xl font-bold mb-8 text-gray-800">Settings</h1>
 
-        {/* ==============================
-            ACCOUNT INFORMATION
-        =============================== */}
+        {/* ACCOUNT INFORMATION */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -131,9 +135,7 @@ export default function Settings() {
           )}
         </motion.div>
 
-        {/* ==============================
-            ACCOUNT DETAILS (READ ONLY)
-        =============================== */}
+        {/* ACCOUNT DETAILS */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

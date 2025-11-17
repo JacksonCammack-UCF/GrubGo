@@ -4,6 +4,9 @@ import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+// ⭐ unified backend URL
+import API_BASE_URL from "../utils/api";
+
 export default function AddFood() {
   const navigate = useNavigate();
   const { user } = useAuth(); // ⭐ get admin ID
@@ -24,7 +27,6 @@ export default function AddFood() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -39,11 +41,11 @@ export default function AddFood() {
     try {
       const adminId = user?.id || user?._id;
 
-      const res = await fetch("http://localhost:5050/api/foods", {
+      const res = await fetch(`${API_BASE_URL}/foods`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-id": adminId,   // ⭐ REQUIRED BY BACKEND
+          "x-admin-id": adminId, // ⭐ REQUIRED BY BACKEND
         },
         body: JSON.stringify(formData),
       });
@@ -71,7 +73,9 @@ export default function AddFood() {
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
       <div className="pt-28 max-w-2xl mx-auto px-6">
-        <h1 className="text-4xl font-bold mb-6 text-gray-800">Add New Food Item</h1>
+        <h1 className="text-4xl font-bold mb-6 text-gray-800">
+          Add New Food Item
+        </h1>
 
         <form
           onSubmit={handleSubmit}
@@ -136,7 +140,9 @@ export default function AddFood() {
           </div>
 
           {error && <p className="text-red-600">{error}</p>}
-          {successMsg && <p className="text-green-600 font-semibold">{successMsg}</p>}
+          {successMsg && (
+            <p className="text-green-600 font-semibold">{successMsg}</p>
+          )}
 
           <button
             type="submit"

@@ -3,6 +3,7 @@ import React, { useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import API_BASE_URL from "../utils/api";   // ⭐ NEW: safe unified base URL
 
 export default function VerifyEmail() {
   const location = useLocation();
@@ -21,27 +22,30 @@ export default function VerifyEmail() {
   const userId = location.state?.userId;
   const email = location.state?.email;
 
-  // Handle typing into the boxes
+  // -----------------------------------------
+  // HANDLE INPUT CHANGES
+  // -----------------------------------------
   const handleChange = (index, value) => {
-    if (!/^[0-9]?$/.test(value)) return; // allow only digits
+    if (!/^[0-9]?$/.test(value)) return;
 
     const newDigits = [...otpDigits];
     newDigits[index] = value;
     setOtpDigits(newDigits);
 
-    // Move to next box
     if (value && index < 5) {
       inputRefs.current[index + 1].focus();
     }
   };
 
-  // Handle backspace to go backwards
   const handleKeyDown = (index, e) => {
     if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
       inputRefs.current[index - 1].focus();
     }
   };
 
+  // -----------------------------------------
+  // HANDLE SUBMIT
+  // -----------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -53,7 +57,6 @@ export default function VerifyEmail() {
     }
 
     const otp = otpDigits.join("");
-
     if (otp.length !== 6) {
       setError("Please enter the full 6-digit code.");
       return;
@@ -62,14 +65,11 @@ export default function VerifyEmail() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        "http://localhost:5050/api/auth/verify-email-otp",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, otp }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/auth/verify-email-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, otp }),
+      });
 
       const data = await response.json();
 
@@ -114,7 +114,7 @@ export default function VerifyEmail() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* 6-digit OTP boxes */}
+            {/* OTP FIELDS */}
             <div className="flex justify-between gap-2">
               {otpDigits.map((digit, index) => (
                 <input

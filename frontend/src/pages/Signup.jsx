@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import API_BASE_URL from "../utils/api";   // ⭐ unified API base
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -18,19 +19,20 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-    const handleSubmit = async (e) => {
+  // ----------------------------------------------------
+  // SUBMIT HANDLER
+  // ----------------------------------------------------
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5050/api/users/signup", {
+      const response = await fetch(`${API_BASE_URL}/users/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -43,13 +45,9 @@ export default function Signup() {
         return;
       }
 
-      // At this point, backend did:
-      // - created user
-      // - sent EMAIL_VERIFICATION OTP
-      // and returned { success: true, status: "PENDING", data: { userId, email, ... } }
-
+      // Backend returns:
+      // { success: true, status: "PENDING", data: { userId, email } }
       if (data.status === "PENDING" && data.data?.userId) {
-        // Go to verify-email page, pass userId & email in route state
         navigate("/verify-email", {
           state: {
             userId: data.data.userId,
@@ -57,7 +55,6 @@ export default function Signup() {
           },
         });
       } else {
-        // fallback
         alert("Signup succeeded, but OTP flow did not return expected data.");
       }
     } catch (err) {
@@ -68,11 +65,9 @@ export default function Signup() {
 
   return (
     <div className="relative min-h-screen bg-gray-50">
-      {/* Navbar & Sidebar */}
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
-      {/* Signup Form Section */}
       <div className="flex items-center justify-center pt-32 px-4">
         <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
           <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
@@ -99,7 +94,7 @@ export default function Signup() {
             {/* Last Name */}
             <div>
               <label className="block text-gray-700 font-medium mb-1">
-                Last Last
+                Last Name
               </label>
               <input
                 type="text"
@@ -161,6 +156,7 @@ export default function Signup() {
               <label className="block text-gray-700 font-medium mb-1">
                 Password
               </label>
+
               <div className="flex items-center border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-yellow-400">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -180,7 +176,6 @@ export default function Signup() {
               </div>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               className="w-full py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition"

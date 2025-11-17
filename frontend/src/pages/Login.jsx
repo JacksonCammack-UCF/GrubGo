@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
-// ⭐ NEW: bring in auth context (we will use it in Login2FA)
+// ⭐ unified backend base URL
+import API_BASE_URL from "../utils/api";
+
+// ⭐ We still import login(), but do NOT call it here
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
-
-  // ⭐ NEW: bring login() into this file,
-  // but DO NOT CALL it yet. It's used in Login2FA after OTP validation.
-  const { login } = useAuth();
+  const { login } = useAuth(); // keep imported, unused here (used in 2FA)
 
   const [formData, setFormData] = useState({
     identifier: "",
@@ -34,7 +34,7 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5050/api/users/login", {
+      const res = await fetch(`${API_BASE_URL}/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,7 +50,7 @@ export default function Login() {
         return;
       }
 
-      // ⭐ SUCCESS → OTP email sent → move to 2FA (do NOT set login state yet)
+      // ⭐ Backend sent OTP → go to 2FA
       if (data.status === "PENDING") {
         navigate("/login-2fa", {
           state: {
@@ -59,7 +59,6 @@ export default function Login() {
           },
         });
       }
-
     } catch (err) {
       console.error("Login error:", err);
       setError("Server error. Please try again later.");

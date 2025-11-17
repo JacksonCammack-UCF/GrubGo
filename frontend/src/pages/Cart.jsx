@@ -10,6 +10,9 @@ import { useAuth } from "../context/AuthContext";
 // ⭐ Animations
 import { motion, AnimatePresence } from "framer-motion";
 
+// ⭐ CENTRALIZED API URL
+import API_BASE_URL from "../utils/api";
+
 export default function Cart() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -53,7 +56,7 @@ export default function Cart() {
       setIsCheckoutLoading(true);
       setCheckoutError("");
 
-      const res = await fetch(`http://localhost:5050/api/orders/${user.id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/orders/${user.id}`, {
         method: "POST",
       });
 

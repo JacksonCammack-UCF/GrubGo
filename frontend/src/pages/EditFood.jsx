@@ -4,10 +4,13 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 
+// ⭐ unified backend URL
+import API_BASE_URL from "../utils/api";
+
 export default function EditFood() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();   // ⭐ Needed for admin header
+  const { user } = useAuth();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -21,14 +24,14 @@ export default function EditFood() {
     price: "",
     category: "",
     inStock: true,
-    imageUrl: ""
+    imageUrl: "",
   });
 
   // ⭐ Load food by ID on mount
   useEffect(() => {
     const fetchFood = async () => {
       try {
-        const res = await fetch(`http://localhost:5050/api/foods/${id}`);
+        const res = await fetch(`${API_BASE_URL}/foods/${id}`);
         const data = await res.json();
 
         if (!res.ok || !data.success) {
@@ -42,7 +45,7 @@ export default function EditFood() {
           price: data.data.price,
           category: data.data.category,
           inStock: data.data.inStock,
-          imageUrl: data.data.imageUrl || ""
+          imageUrl: data.data.imageUrl || "",
         });
 
         setLoading(false);
@@ -55,7 +58,7 @@ export default function EditFood() {
     fetchFood();
   }, [id]);
 
-  // ⭐ Handle form updates
+  // ⭐ Form change handler
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -67,7 +70,7 @@ export default function EditFood() {
     setFood({ ...food, [name]: value });
   };
 
-  // ⭐ Submit updated food with correct admin header
+  // ⭐ Submit update with admin header
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -76,11 +79,11 @@ export default function EditFood() {
     try {
       const adminId = user?.id || user?._id;
 
-      const res = await fetch(`http://localhost:5050/api/foods/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/foods/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-id": adminId,        // ⭐ REQUIRED BY BACKEND
+          "x-admin-id": adminId, // ⭐ REQUIRED by backend
         },
         body: JSON.stringify(food),
       });
@@ -94,7 +97,6 @@ export default function EditFood() {
       }
 
       navigate("/admin");
-
     } catch (err) {
       setError("Server error updating food.");
       setSaving(false);

@@ -5,6 +5,9 @@ import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
+// ⭐ Centralized API URL
+import API_BASE_URL from "../utils/api";
+
 export default function OrderHistory() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -19,7 +22,7 @@ export default function OrderHistory() {
   const [itemCache, setItemCache] = useState({});
 
   // -------------------------------
-  // AUTH REDIRECT (must NOT be before hooks)
+  // AUTH REDIRECT
   // -------------------------------
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -28,7 +31,7 @@ export default function OrderHistory() {
   }, [authLoading, isAuthenticated, navigate]);
 
   // -------------------------------
-  // LOAD ORDER HISTORY (after hydration + valid user)
+  // LOAD ORDER HISTORY
   // -------------------------------
   useEffect(() => {
     if (authLoading) return;
@@ -37,7 +40,7 @@ export default function OrderHistory() {
     const loadOrders = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5050/api/orders/history/${user.id}`
+          `${API_BASE_URL}/api/orders/history/${user.id}`
         );
         const data = await res.json();
 
@@ -63,7 +66,7 @@ export default function OrderHistory() {
     if (itemCache[foodId]) return itemCache[foodId];
 
     try {
-      const res = await fetch(`http://localhost:5050/api/foods/${foodId}`);
+      const res = await fetch(`${API_BASE_URL}/api/foods/${foodId}`);
       const data = await res.json();
 
       if (!res.ok || !data.success) return null;
