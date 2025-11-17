@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function AddFood() {
   const navigate = useNavigate();
+  const { user } = useAuth(); // ⭐ get admin ID
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -20,7 +22,6 @@ export default function AddFood() {
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  // Handle changes to form fields
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -30,16 +31,20 @@ export default function AddFood() {
     }));
   };
 
-  // Submit new food item
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccessMsg("");
 
     try {
+      const adminId = user?.id || user?._id;
+
       const res = await fetch("http://localhost:5050/api/foods", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-id": adminId,   // ⭐ REQUIRED BY BACKEND
+        },
         body: JSON.stringify(formData),
       });
 
@@ -50,10 +55,8 @@ export default function AddFood() {
         return;
       }
 
-      // Success
       setSuccessMsg("Food item added successfully!");
 
-      // After 1 second, go back to admin dashboard
       setTimeout(() => navigate("/admin"), 1000);
 
     } catch (error) {
@@ -74,7 +77,6 @@ export default function AddFood() {
           onSubmit={handleSubmit}
           className="bg-white p-8 rounded-2xl shadow-md space-y-4"
         >
-          {/* Name */}
           <div>
             <label className="font-medium text-gray-700">Name</label>
             <input
@@ -87,7 +89,6 @@ export default function AddFood() {
             />
           </div>
 
-          {/* Price */}
           <div>
             <label className="font-medium text-gray-700">Price</label>
             <input
@@ -100,7 +101,6 @@ export default function AddFood() {
             />
           </div>
 
-          {/* Category */}
           <div>
             <label className="font-medium text-gray-700">Category</label>
             <input
@@ -113,7 +113,6 @@ export default function AddFood() {
             />
           </div>
 
-          {/* Image URL */}
           <div>
             <label className="font-medium text-gray-700">Image URL</label>
             <input
@@ -126,7 +125,6 @@ export default function AddFood() {
             />
           </div>
 
-          {/* In Stock */}
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
@@ -137,10 +135,7 @@ export default function AddFood() {
             <label className="font-medium text-gray-700">In Stock</label>
           </div>
 
-          {/* Error Message */}
           {error && <p className="text-red-600">{error}</p>}
-
-          {/* Success Message */}
           {successMsg && <p className="text-green-600 font-semibold">{successMsg}</p>}
 
           <button

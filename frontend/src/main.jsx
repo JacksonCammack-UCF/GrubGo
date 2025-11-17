@@ -23,6 +23,7 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AddFood from "./pages/AddFood.jsx";
 import EditFood from "./pages/EditFood.jsx";
 import Settings from "./pages/Settings.jsx";
+import About from "./pages/About.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -42,6 +43,8 @@ createRoot(document.getElementById("root")).render(
             <Route path="/order-success/:orderId" element={<OrderSuccess />} />
             <Route path="/orders" element={<OrderHistory />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
 
             <Route
               path="/admin"

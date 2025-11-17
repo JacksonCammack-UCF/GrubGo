@@ -15,7 +15,9 @@ export default function OrderSuccess() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ⭐ Load order directly from backend
+  // ----------------------------------------------------
+  // LOAD ORDER FROM BACKEND
+  // ----------------------------------------------------
   useEffect(() => {
     const loadOrder = async () => {
       try {
@@ -29,7 +31,7 @@ export default function OrderSuccess() {
           throw new Error(data.message || "Unable to load order.");
         }
 
-        setOrder(data.order); // backend returns: { success, order }
+        setOrder(data.order);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -40,7 +42,9 @@ export default function OrderSuccess() {
     loadOrder();
   }, [orderId]);
 
-  // ⭐ Loading state
+  // ----------------------------------------------------
+  // LOADING VIEW
+  // ----------------------------------------------------
   if (loading) {
     return (
       <div className="relative min-h-screen bg-gray-50 flex justify-center items-center">
@@ -49,7 +53,9 @@ export default function OrderSuccess() {
     );
   }
 
-  // ⭐ Error state
+  // ----------------------------------------------------
+  // ERROR VIEW
+  // ----------------------------------------------------
   if (error || !order) {
     return (
       <div className="relative min-h-screen bg-gray-50 flex justify-center items-center flex-col">
@@ -64,13 +70,17 @@ export default function OrderSuccess() {
     );
   }
 
+  // ----------------------------------------------------
+  // CLEAN TAX CALCULATION (BACKEND STORES FACTOR 1.07)
+  // ----------------------------------------------------
+  const taxAmount = order.total - order.subtotal;
+
   return (
     <div className="relative min-h-screen bg-gray-50">
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
       <div className="pt-28 px-6 max-w-3xl mx-auto pb-20">
-        {/* Success Message */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -80,27 +90,30 @@ export default function OrderSuccess() {
           <h1 className="text-4xl font-bold text-green-600 mb-4">
             Order Confirmed!
           </h1>
+
           <p className="text-gray-700 text-lg mb-6">
             Your order has been successfully placed.
           </p>
 
-          {/* Order Details */}
+          {/* Order Summary */}
           <div className="bg-gray-100 p-4 rounded-xl mb-6 text-left">
             <p><strong>Order ID:</strong> {order._id}</p>
             <p><strong>Date:</strong> {new Date(order.createdAt).toLocaleString()}</p>
             <p><strong>Status:</strong> {order.status}</p>
             <p><strong>Subtotal:</strong> ${order.subtotal.toFixed(2)}</p>
-            <p><strong>Tax:</strong> ${(order.total - order.subtotal).toFixed(2)}</p>
+            <p><strong>Tax:</strong> ${taxAmount.toFixed(2)}</p>
             <p><strong>Total:</strong> ${order.total.toFixed(2)}</p>
             <p><strong>Points Earned:</strong> {order.pointsEarned}</p>
           </div>
 
-          {/* Order Items */}
+          {/* Items */}
           <h2 className="text-2xl font-semibold mt-6 mb-4">Items Ordered</h2>
 
           <div className="space-y-4">
             {order.items.map((item, idx) => {
               const qty = item.qty ?? item.quantity ?? 1;
+              const price = item.price ?? item.foodPrice ?? 0;
+
               return (
                 <motion.div
                   key={idx}
@@ -110,12 +123,14 @@ export default function OrderSuccess() {
                   className="bg-white p-4 rounded-xl shadow flex justify-between items-center"
                 >
                   <div>
-                    <p className="font-semibold text-lg">{item.name || "Item"}</p>
+                    <p className="font-semibold text-lg">
+                      {item.name || item.foodName || "Item"}
+                    </p>
                     <p className="text-gray-600 text-sm">Qty: {qty}</p>
                   </div>
 
                   <p className="text-gray-800 font-bold">
-                    ${(item.price || 0).toFixed(2)}
+                    ${Number(price).toFixed(2)}
                   </p>
                 </motion.div>
               );
@@ -125,7 +140,7 @@ export default function OrderSuccess() {
           {/* Buttons */}
           <div className="mt-8 flex flex-col gap-4">
             <button
-              onClick={() => navigate(`/orders`)}
+              onClick={() => navigate("/orders")}
               className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition"
             >
               View Order History

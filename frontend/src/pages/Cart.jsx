@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
@@ -16,28 +16,31 @@ export default function Cart() {
 
   const navigate = useNavigate();
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, isAuthenticated, authLoading } = useAuth();
 
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
 
-  // ⭐ Compute subtotal
-  const subtotal = cart.reduce((sum, item) => {
-    const price = Number(item?.price) || 0;
-    const qty = Number(item?.qty) || 0;
-    return sum + price * qty;
-  }, 0);
+  // -------------------------------------------------
+  // HYDRATION + AUTH REDIRECT (safe)
+  // -------------------------------------------------
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
-  // ⭐ Tax (7%)
-  const taxAmount = subtotal * 0.07;
-
-  // ⭐ Total
-  const total = subtotal + taxAmount;
-
-  // ⭐ HANDLE CHECKOUT
+  // -------------------------------------------------
+  // CHECKOUT HANDLER
+  // -------------------------------------------------
   const handleCheckout = async () => {
-    if (!user) {
-      setCheckoutError("You must be logged in to checkout.");
+    if (authLoading) {
+      setCheckoutError("Restoring your session… try again.");
+      return;
+    }
+
+    if (!user?.id) {
+      setCheckoutError("Invalid user. Please log in again.");
       return navigate("/login");
     }
 
@@ -65,9 +68,7 @@ export default function Cart() {
         throw new Error("Order ID missing in response.");
       }
 
-      // ⭐ Clear cart AFTER successful order
       clearCart();
-
       navigate(`/order-success/${orderId}`);
     } catch (err) {
       console.error("Checkout error:", err);
@@ -77,16 +78,41 @@ export default function Cart() {
     }
   };
 
+  // -------------------------------------------------
+  // CART TOTALS
+  // -------------------------------------------------
+  const subtotal = cart.reduce((sum, item) => {
+    const price = Number(item?.price) || 0;
+    const qty = Number(item?.qty) || 0;
+    return sum + price * qty;
+  }, 0);
+
+  const taxAmount = subtotal * 0.07;
+  const total = subtotal + taxAmount;
+
+  // -------------------------------------------------
+  // RENDER BLOCKING STATES
+  // -------------------------------------------------
+  if (authLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen text-xl text-gray-600">
+        Restoring your session…
+      </div>
+    );
+  }
+
+  // -------------------------------------------------
+  // MAIN RENDER
+  // -------------------------------------------------
   return (
     <div className="relative min-h-screen bg-gray-50">
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
-      {/* ⭐ Bottom padding so summary never gets cut off */}
       <div className="pt-28 px-6 max-w-4xl mx-auto pb-32">
         <h1 className="text-4xl font-bold mb-6 text-gray-800">Your Cart</h1>
 
-        {/* ⭐ Empty Cart State */}
+        {/* EMPTY CART */}
         {cart.length === 0 && (
           <div className="text-center mt-16">
             <p className="text-gray-600 text-xl mb-6">Your cart is empty.</p>
@@ -100,7 +126,7 @@ export default function Cart() {
           </div>
         )}
 
-        {/* Cart Items */}
+        {/* CART ITEMS */}
         <div className="flex flex-col gap-4">
           <AnimatePresence mode="popLayout">
             {cart.map((item) => {
@@ -177,7 +203,7 @@ export default function Cart() {
           </AnimatePresence>
         </div>
 
-        {/* ⭐ Cart Summary With TAX */}
+        {/* ORDER SUMMARY */}
         {cart.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -205,7 +231,6 @@ export default function Cart() {
               </div>
             </div>
 
-            {/* ⭐ Checkout Button */}
             <button
               onClick={handleCheckout}
               disabled={isCheckoutLoading}
@@ -214,7 +239,6 @@ export default function Cart() {
               {isCheckoutLoading ? "Processing..." : "Checkout"}
             </button>
 
-            {/* ⭐ Error Message */}
             {checkoutError && (
               <p className="text-red-600 text-center text-sm mt-2">
                 {checkoutError}

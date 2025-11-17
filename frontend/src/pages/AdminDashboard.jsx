@@ -13,11 +13,9 @@ export default function AdminDashboard() {
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ⭐ Pagination state
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // ⭐ Fetch foods WITH pagination
   useEffect(() => {
     const fetchFoods = async () => {
       setLoading(true);
@@ -42,14 +40,19 @@ export default function AdminDashboard() {
     fetchFoods();
   }, [page]);
 
-  // ⭐ Delete food item
+  // ⭐ Delete with correct header
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this item?");
+    const confirmDelete = window.confirm("Are you sure?");
     if (!confirmDelete) return;
 
     try {
+      const adminId = user?.id || user?._id;
+
       const res = await fetch(`http://localhost:5050/api/foods/${id}`, {
         method: "DELETE",
+        headers: {
+          "x-admin-id": adminId,  // ⭐ MATCHES BACKEND
+        },
       });
 
       const data = await res.json();
@@ -59,7 +62,6 @@ export default function AdminDashboard() {
         return;
       }
 
-      // Remove locally
       setFoods((prev) => prev.filter((item) => item._id !== id));
     } catch (err) {
       console.error("Error deleting food:", err);
@@ -79,7 +81,6 @@ export default function AdminDashboard() {
           Welcome, <span className="font-semibold">{user?.name}</span>.
         </p>
 
-        {/* ⭐ Add Food Button */}
         <div className="mb-6">
           <Link
             to="/admin/add"
@@ -89,10 +90,8 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
-        {/* ⭐ Loading State */}
         {loading && <p className="text-gray-600">Loading foods...</p>}
 
-        {/* ⭐ Food Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {foods.map((food) => (
             <div key={food._id} className="bg-white p-5 rounded-xl shadow-md flex flex-col">
@@ -125,15 +124,12 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* ⭐ Empty State */}
         {foods.length === 0 && !loading && (
-          <p className="text-gray-600 text-center mt-8">No food items found. Add one above.</p>
+          <p className="text-gray-600 text-center mt-8">No food items found.</p>
         )}
 
-        {/* ⭐ Pagination Controls */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-10">
-            {/* Prev */}
             <button
               disabled={page === 1}
               onClick={() => setPage((p) => p - 1)}
@@ -144,7 +140,6 @@ export default function AdminDashboard() {
               Prev
             </button>
 
-            {/* Page Numbers */}
             {[...Array(totalPages)].map((_, i) => (
               <button
                 key={i}
@@ -159,7 +154,6 @@ export default function AdminDashboard() {
               </button>
             ))}
 
-            {/* Next */}
             <button
               disabled={page === totalPages}
               onClick={() => setPage((p) => p + 1)}

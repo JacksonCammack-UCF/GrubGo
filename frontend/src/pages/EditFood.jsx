@@ -2,17 +2,20 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import { useAuth } from "../context/AuthContext";
 
 export default function EditFood() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();   // ⭐ Needed for admin header
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [error, setError] = useState("");
+
   const [food, setFood] = useState({
     name: "",
     price: "",
@@ -21,9 +24,7 @@ export default function EditFood() {
     imageUrl: ""
   });
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
-  // ⭐ Load food by ID
+  // ⭐ Load food by ID on mount
   useEffect(() => {
     const fetchFood = async () => {
       try {
@@ -31,7 +32,8 @@ export default function EditFood() {
         const data = await res.json();
 
         if (!res.ok || !data.success) {
-          setError(data.message || "Failed to load food.");
+          setError(data.message || "Failed to load food item.");
+          setLoading(false);
           return;
         }
 
@@ -40,12 +42,13 @@ export default function EditFood() {
           price: data.data.price,
           category: data.data.category,
           inStock: data.data.inStock,
-          imageUrl: data.data.imageUrl
+          imageUrl: data.data.imageUrl || ""
         });
 
         setLoading(false);
       } catch (err) {
         setError("Server error loading food.");
+        setLoading(false);
       }
     };
 
@@ -56,7 +59,6 @@ export default function EditFood() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Special handling for boolean inStock
     if (name === "inStock") {
       setFood({ ...food, inStock: value === "true" });
       return;
@@ -65,17 +67,22 @@ export default function EditFood() {
     setFood({ ...food, [name]: value });
   };
 
-  // ⭐ Submit updated food
+  // ⭐ Submit updated food with correct admin header
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError("");
 
     try {
+      const adminId = user?.id || user?._id;
+
       const res = await fetch(`http://localhost:5050/api/foods/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(food)
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-id": adminId,        // ⭐ REQUIRED BY BACKEND
+        },
+        body: JSON.stringify(food),
       });
 
       const data = await res.json();
@@ -86,8 +93,8 @@ export default function EditFood() {
         return;
       }
 
-      // Redirect back to Admin Dashboard
       navigate("/admin");
+
     } catch (err) {
       setError("Server error updating food.");
       setSaving(false);
@@ -113,9 +120,7 @@ export default function EditFood() {
             Edit Food Item
           </h2>
 
-          {error && (
-            <p className="text-red-600 text-center mb-4">{error}</p>
-          )}
+          {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
           <form onSubmit={handleSubmit} className="space-y-5">
 

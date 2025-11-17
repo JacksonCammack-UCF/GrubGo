@@ -9,7 +9,7 @@ export default function OrderHistory() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
@@ -19,32 +19,26 @@ export default function OrderHistory() {
   const [itemCache, setItemCache] = useState({});
 
   // -------------------------------
-  // AUTH HYDRATION
-  // -------------------------------
-  if (isAuthenticated === null) {
-    return (
-      <div className="flex justify-center items-center h-screen text-xl text-gray-600">
-        Loading...
-      </div>
-    );
-  }
-
-  useEffect(() => {
-    if (isAuthenticated === false) navigate("/login");
-  }, [isAuthenticated, navigate]);
-
-  // -------------------------------
-  // LOAD ORDER HISTORY
+  // AUTH REDIRECT (must NOT be before hooks)
   // -------------------------------
   useEffect(() => {
-    if (!user) return;
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  // -------------------------------
+  // LOAD ORDER HISTORY (after hydration + valid user)
+  // -------------------------------
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user || !user.id) return;
 
     const loadOrders = async () => {
       try {
         const res = await fetch(
           `http://localhost:5050/api/orders/history/${user.id}`
         );
-
         const data = await res.json();
 
         if (!res.ok || !data.success) {
@@ -60,7 +54,7 @@ export default function OrderHistory() {
     };
 
     loadOrders();
-  }, [user]);
+  }, [authLoading, user]);
 
   // -------------------------------
   // LAZY LOAD ITEM DETAILS
@@ -101,8 +95,17 @@ export default function OrderHistory() {
   };
 
   // -------------------------------
-  // LOADING / ERROR STATES
+  // LOADING / ERROR RENDERING
   // -------------------------------
+
+  if (authLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen text-xl text-gray-600">
+        Restoring your session…
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen text-xl text-gray-600">
@@ -138,7 +141,6 @@ export default function OrderHistory() {
           Order History
         </h1>
 
-        {/* EMPTY */}
         {orders.length === 0 && (
           <div className="text-center mt-20">
             <p className="text-gray-600 text-xl mb-6">
@@ -153,10 +155,8 @@ export default function OrderHistory() {
           </div>
         )}
 
-        {/* ORDERS */}
         <div className="space-y-6">
           {orders.map((order) => {
-            // ⭐ Correct tax calculation: (total - subtotal)
             const computedTax = (order.total - order.subtotal).toFixed(2);
 
             return (
@@ -166,7 +166,6 @@ export default function OrderHistory() {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-2xl shadow-md p-6"
               >
-                {/* HEADER */}
                 <div
                   className="flex justify-between items-center cursor-pointer"
                   onClick={() => toggleExpand(order._id, order.items)}
@@ -188,7 +187,6 @@ export default function OrderHistory() {
                   </div>
                 </div>
 
-                {/* EXPANDED */}
                 <AnimatePresence>
                   {expanded[order._id] && (
                     <motion.div
@@ -230,7 +228,6 @@ export default function OrderHistory() {
                         })}
                       </div>
 
-                      {/* TOTALS */}
                       <div className="mt-6 p-4 bg-gray-100 rounded-xl space-y-1">
                         <p>
                           <strong>Subtotal:</strong>{" "}
