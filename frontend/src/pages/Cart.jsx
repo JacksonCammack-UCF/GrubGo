@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import { useNavigate } from "react-router-dom";
 
 // ⭐ Cart context
 import { useCart } from "../context/CartContext";
@@ -12,6 +13,7 @@ export default function Cart() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
+  const navigate = useNavigate();
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
 
   // ⭐ SAFE total price calculation
@@ -26,21 +28,30 @@ export default function Cart() {
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
-      <div className="pt-28 px-6 max-w-4xl mx-auto">
+      {/* ⭐ Bottom padding so summary box never gets cut off */}
+      <div className="pt-28 px-6 max-w-4xl mx-auto pb-32">
         <h1 className="text-4xl font-bold mb-6 text-gray-800">Your Cart</h1>
 
-        {/* Empty Cart */}
+        {/* ⭐ Empty Cart State (now with View Menu button) */}
         {cart.length === 0 && (
-          <p className="text-gray-600 text-xl mt-10 text-center">
-            Your cart is empty.
-          </p>
+          <div className="text-center mt-16">
+            <p className="text-gray-600 text-xl mb-6">
+              Your cart is empty.
+            </p>
+
+            <button
+              onClick={() => navigate("/menu")}
+              className="px-6 py-3 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition"
+            >
+              View Menu
+            </button>
+          </div>
         )}
 
         {/* Cart Items */}
         <div className="flex flex-col gap-4">
           <AnimatePresence mode="popLayout">
             {cart.map((item) => {
-              // ⭐ SAFETY CHECK — skip corrupted items
               if (!item || !item._id) return null;
 
               const price = Number(item.price) || 0;
@@ -56,14 +67,12 @@ export default function Cart() {
                   transition={{ duration: 0.25 }}
                   className="bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition flex gap-4"
                 >
-                  {/* Image */}
                   <img
                     src={item.imageUrl}
                     alt={item.name || "Food"}
                     className="w-28 h-28 object-cover rounded-xl"
                   />
 
-                  {/* Info */}
                   <div className="flex-1 flex flex-col justify-between">
                     <h3 className="text-xl font-semibold text-gray-800">
                       {item.name || "Unnamed Item"}
@@ -74,13 +83,16 @@ export default function Cart() {
                     </p>
                   </div>
 
-                  {/* Quantity Controls */}
                   <div className="flex flex-col justify-between items-end">
                     <motion.div
                       key={qty}
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 20,
+                      }}
                       className="flex items-center gap-3 bg-gray-100 rounded-full px-4 py-2"
                     >
                       <button
@@ -102,7 +114,6 @@ export default function Cart() {
                       </button>
                     </motion.div>
 
-                    {/* Remove */}
                     <button
                       onClick={() => removeFromCart(item._id)}
                       className="text-red-500 hover:text-red-700 text-sm mt-2"

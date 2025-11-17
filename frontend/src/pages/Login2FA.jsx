@@ -13,7 +13,7 @@ export default function Login2FA() {
   const location = useLocation();
 
   const { login } = useAuth();
-  const { setCart } = useCart();   // ⭐ NEW
+  const { setCart } = useCart();
 
   const userId = location.state?.userId;
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -45,6 +45,36 @@ export default function Login2FA() {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1].focus();
     }
+  };
+
+  // ⭐ Fetch full food details for each backend cart item
+  const enrichCart = async (backendCart) => {
+    return await Promise.all(
+      backendCart.map(async (item) => {
+        try {
+          const res = await fetch(`http://localhost:5050/api/foods/${item.foodId}`);
+          const json = await res.json();
+
+          if (!json.success || !json.data) {
+            return null; // skip invalid items
+          }
+
+          const food = json.data;
+
+          return {
+            _id: food._id,
+            name: food.name,
+            price: food.price,
+            category: food.category,
+            imageUrl: food.imageUrl,
+            qty: item.quantity,
+          };
+        } catch (err) {
+          console.error("Failed to fetch food:", item.foodId, err);
+          return null;
+        }
+      })
+    ).then((items) => items.filter(Boolean)); // remove nulls
   };
 
   const handleSubmit = async (e) => {
@@ -88,11 +118,14 @@ export default function Login2FA() {
         isAdmin: backendUser.isAdmin,
       };
 
-      // ⭐ Save login
+      // ⭐ Save login to AuthContext
       login(formattedUser);
 
-      // ⭐ Load their cart from backend
-      setCart(backendUser.cart || []);
+      // ⭐ Convert backend cart → full enriched cart
+      const enrichedCart = await enrichCart(backendUser.cart || []);
+
+      // ⭐ Load enriched cart into CartContext
+      setCart(enrichedCart || []);
 
       // ⭐ Redirect
       navigate(backendUser.isAdmin ? "/admin" : "/menu");
