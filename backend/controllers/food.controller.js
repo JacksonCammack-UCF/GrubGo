@@ -1,3 +1,4 @@
+//backend/controllers/food.controller.js
 import Food from "../models/food.model.js";
 import mongoose from "mongoose";
 
@@ -6,7 +7,6 @@ export const getFoods = async(req, res) =>{
     try {
         const foods = await Food.find({});
         res.status(200).json({success: true, data: foods })
-        res.status(200).json({success: true, message: "Showing all foods!"})
     } catch (error) {
         console.log("error in fetching the foods: ", error.message);
         res.status(500).json({success: false, message: "Server Error"})
@@ -15,18 +15,29 @@ export const getFoods = async(req, res) =>{
 }
 
 export const createFood = async(req, res) =>{
-    
-    const food = req.body; // User input, will send this data
-
-    if(!food.name || !food.price || !food.category || !food.inStock || !food.imageUrl ){ // Check all requirements
-        return res.status(400).json({success:false, message: "Please fill in all requirements!"});
-    }
-
-    const newFood = new Food(food) // Create new food
-
     try {
-        // ADD FOOD TO DATABASE
+        const {name, price, category, imageUrl, inStock} = req.body;
+
+        if (!name || price === undefined || price === null || !category) {
+            return  res.status(400).json({success: false, message: "Name,price and category are required!"});
+        }
+        const foodData = {
+            name: name.trim(),
+            price,
+            category: category.trim(),
+        };
+
+        if (typeof inStock === "boolean") {
+        foodData.inStock = inStock;
+        }
+
+        if (typeof imageUrl === "string" && imageUrl.trim().length > 0) {
+        foodData.imageUrl = imageUrl.trim();
+        }
+
+        const newFood = new Food(foodData);
         await newFood.save();
+
         res.status(201).json({success: true, data: newFood});
     } catch (error) {
         console.error("Error in Create Food:", error.message);
@@ -36,7 +47,6 @@ export const createFood = async(req, res) =>{
 
 export const updateFood = async(req, res) =>{
     const{id} = req.params;
-    
     const food = req.body;
 
     // 404 error, not found!
@@ -46,13 +56,18 @@ export const updateFood = async(req, res) =>{
 
     try {
         // new:true allows you to update the object!
-        const updatedFood = await Food.findByIdAndUpdate(id, food, {new:true})
-        res.status(200).json({ sucess: "true", data: updatedFood}); 
+        const updatedFood = await Food.findByIdAndUpdate(id, food, {new:true, runValidators: true});
+        if (!updatedFood) {
+            return res.status(404).json({ success: false, message: "Food not found!" });
+        }
+        
+        res.status(200).json({ success: "true", data: updatedFood}); 
     } catch (error) {
 
-        res.status(500).json({ sucess: "false", message: "Server Error"});
+        res.status(500).json({ success: "false", message: "Server Error"});
     }
 }
+
 
 export const deleteFood = async (req, res) => {
     // Send ID, so we can grab it!
@@ -66,11 +81,14 @@ export const deleteFood = async (req, res) => {
     
     // Check for it in database!
     try {
-        await Food.findByIdAndDelete(id);
+        const deletedFood = await Food.findByIdAndDelete(id);
+        if (!deletedFood) {
+            return res.status(404).json({ success: false, message: "Food not found!" });
+        }
         res.status(200).json({success: true, message: "Food deleted!"});
     } catch (error) {
         console.log("error in deleting food:", error.message);
-        res.sendStatus(500).json({sucess: false, message: "Server Error"});
+        res.status(500).json({success: false, message: "Server Error"});
         
     }
 }

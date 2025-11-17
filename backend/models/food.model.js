@@ -1,3 +1,4 @@
+// backend/models/food.model.js
 import mongoose from 'mongoose';
 
 const foodSchema = new mongoose.Schema({

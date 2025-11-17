@@ -1,3 +1,4 @@
+// backend/routes/food.route.js
 import express from "express";
 
 import { createFood, deleteFood, getFoods, updateFood } from "../controllers/food.controller.js";

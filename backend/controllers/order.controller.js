@@ -1,3 +1,4 @@
+// backend/controllers/order.controller.js
 import Order from "../models/order.model.js";
 import mongoose from "mongoose";
 import User from "../models/user.model.js";
@@ -13,6 +14,9 @@ export const getOrder = async(req, res) =>{
         }
         
         const tempUser = await User.findById(id);
+        
+        if (!tempUser) 
+            return res.status(404).json({ success: false, message: "User not found!" });
 
         // Create a new Order
         const newOrder = new Order({
@@ -76,7 +80,7 @@ export const getOrder = async(req, res) =>{
         res.status(200).json({success: true, message: "Order has been saved!", order: newOrder, user: tempUser});
         } catch (error) {
             console.log("error in getting order:", error.message);
-            res.sendStatus(500).json({sucess: false, message: "Server Error"});
+            res.status(500).json({success: false, message: "Server Error"});
         }
 
 

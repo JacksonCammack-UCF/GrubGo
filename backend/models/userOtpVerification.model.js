@@ -1,3 +1,4 @@
+// backend/models/userOtpVerification.model.js
 import mongoose from "mongoose";
 
 const userOTPVerificationSchema = new mongoose.Schema({
