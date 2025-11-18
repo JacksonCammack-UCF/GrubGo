@@ -22,7 +22,7 @@ export default function OrderSuccess() {
     const loadOrder = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5050/api/orders/order/${orderId}`
+          `${import.meta.env.VITE_API_URL}/orders/order/${orderId}`
         );
 
         const data = await res.json();
@@ -71,7 +71,7 @@ export default function OrderSuccess() {
   }
 
   // ----------------------------------------------------
-  // CLEAN TAX CALCULATION (BACKEND STORES FACTOR 1.07)
+  // CLEAN TAX CALCULATION
   // ----------------------------------------------------
   const taxAmount = order.total - order.subtotal;
 

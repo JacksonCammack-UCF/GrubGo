@@ -13,7 +13,7 @@ export default function Menu() {
   const [clickedId, setClickedId] = useState(null);
 
   const { addToCart } = useCart();
-  const { authLoading } = useAuth(); // ⭐ safe — always runs
+  const { authLoading } = useAuth();
 
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,7 @@ export default function Menu() {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:5050/api/foods?page=${page}&limit=9`
+          `${import.meta.env.VITE_API_URL}/foods?page=${page}&limit=9`
         );
         const data = await res.json();
 

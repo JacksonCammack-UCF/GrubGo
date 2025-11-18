@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [authLoading, setAuthLoading] = useState(true);     // ⭐ NEW
+  const [authLoading, setAuthLoading] = useState(true); 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -23,20 +23,20 @@ export function AuthProvider({ children }) {
 
         const parsed = JSON.parse(storedUser);
 
-        // PRELOAD user immediately (prevents navbar showing "U")
+        // Preload user immediately (prevents Navbar showing fallback letter)
         setUser(parsed);
         setIsAuthenticated(true);
 
         // REFRESH FROM BACKEND
         const backendRes = await fetch(
-          `http://localhost:5050/api/users/${parsed.id || parsed._id}`
+          `${import.meta.env.VITE_API_URL}/users/${parsed.id || parsed._id}`
         );
+
         const backendJson = await backendRes.json();
 
         if (backendJson.success && backendJson.data) {
           const fresh = backendJson.data;
 
-          // ⭐ Normalize fields for consistent frontend use
           const normalized = {
             ...fresh,
             id: fresh._id,
@@ -50,7 +50,7 @@ export function AuthProvider({ children }) {
       } catch (err) {
         console.error("Auth restore error:", err);
       } finally {
-        setAuthLoading(false); // ⭐ Only now the app may render protected pages
+        setAuthLoading(false);
       }
     };
 
@@ -61,7 +61,6 @@ export function AuthProvider({ children }) {
   // LOGIN
   // -------------------------------------------
   const login = (userData) => {
-    // Normalize before saving
     const normalized = {
       ...userData,
       id: userData.id || userData._id,
@@ -77,7 +76,7 @@ export function AuthProvider({ children }) {
   };
 
   // -------------------------------------------
-  // UPDATE USER LOCALLY (Settings page)
+  // UPDATE USER LOCALLY
   // -------------------------------------------
   const updateUser = (updates) => {
     setUser((prev) => {
@@ -100,7 +99,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider
       value={{
-        authLoading,      // ⭐ NEW
+        authLoading,
         isAuthenticated,
         user,
         login,

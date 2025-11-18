@@ -21,21 +21,18 @@ export default function VerifyEmail() {
   const userId = location.state?.userId;
   const email = location.state?.email;
 
-  // Handle typing into the boxes
   const handleChange = (index, value) => {
-    if (!/^[0-9]?$/.test(value)) return; // allow only digits
+    if (!/^[0-9]?$/.test(value)) return;
 
     const newDigits = [...otpDigits];
     newDigits[index] = value;
     setOtpDigits(newDigits);
 
-    // Move to next box
     if (value && index < 5) {
       inputRefs.current[index + 1].focus();
     }
   };
 
-  // Handle backspace to go backwards
   const handleKeyDown = (index, e) => {
     if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
       inputRefs.current[index - 1].focus();
@@ -63,7 +60,7 @@ export default function VerifyEmail() {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:5050/api/auth/verify-email-otp",
+        `${import.meta.env.VITE_API_URL}/auth/verify-email-otp`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

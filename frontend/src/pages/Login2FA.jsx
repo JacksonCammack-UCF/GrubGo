@@ -49,7 +49,9 @@ export default function Login2FA() {
     return await Promise.all(
       backendCart.map(async (item) => {
         try {
-          const res = await fetch(`http://localhost:5050/api/foods/${item.foodId}`);
+          const res = await fetch(
+            `${import.meta.env.VITE_API_URL}/foods/${item.foodId}`
+          );
           const json = await res.json();
 
           if (!json.success || !json.data) return null;
@@ -81,11 +83,14 @@ export default function Login2FA() {
     }
 
     try {
-      const res = await fetch("http://localhost:5050/api/auth/verify-2fa-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, otp: fullOtp }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/auth/verify-2fa-otp`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, otp: fullOtp }),
+        }
+      );
 
       const data = await res.json();
 
@@ -103,12 +108,14 @@ export default function Login2FA() {
       const base = data.data;
 
       // ⭐ FETCH FULL USER BEFORE LOGIN
-      const fullRes = await fetch(`http://localhost:5050/api/users/${base._id}`);
+      const fullRes = await fetch(
+        `${import.meta.env.VITE_API_URL}/users/${base._id}`
+      );
       const fullJson = await fullRes.json();
 
-      const full = fullJson.data; // includes firstName, lastName, phone, points, etc.
+      const full = fullJson.data;
 
-      // ⭐ Format final user for auth context
+      // ⭐ Format user
       const formattedUser = {
         id: full._id,
         name: full.firstName,
@@ -120,10 +127,10 @@ export default function Login2FA() {
         lastName: full.lastName,
       };
 
-      // ⭐ Save to auth context
+      // ⭐ Save user
       login(formattedUser);
 
-      // ⭐ Load cart
+      // ⭐ Load + expand cart
       const enrichedCart = await enrichCart(full.cart || []);
       setCart(enrichedCart || []);
 

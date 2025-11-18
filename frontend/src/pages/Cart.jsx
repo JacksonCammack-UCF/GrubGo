@@ -53,9 +53,12 @@ export default function Cart() {
       setIsCheckoutLoading(true);
       setCheckoutError("");
 
-      const res = await fetch(`http://localhost:5050/api/orders/${user.id}`, {
-        method: "POST",
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/orders/${user.id}`,
+        {
+          method: "POST",
+        }
+      );
 
       const data = await res.json();
 

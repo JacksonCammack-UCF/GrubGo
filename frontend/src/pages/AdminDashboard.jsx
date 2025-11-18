@@ -22,8 +22,9 @@ export default function AdminDashboard() {
 
       try {
         const res = await fetch(
-          `http://localhost:5050/api/foods?page=${page}&limit=9`
+          `${import.meta.env.VITE_API_URL}/foods?page=${page}&limit=9`
         );
+
         const data = await res.json();
 
         if (data.success) {
@@ -48,12 +49,15 @@ export default function AdminDashboard() {
     try {
       const adminId = user?.id || user?._id;
 
-      const res = await fetch(`http://localhost:5050/api/foods/${id}`, {
-        method: "DELETE",
-        headers: {
-          "x-admin-id": adminId,  // ⭐ MATCHES BACKEND
-        },
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/foods/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "x-admin-id": adminId,
+          },
+        }
+      );
 
       const data = await res.json();
 

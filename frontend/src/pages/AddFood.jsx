@@ -39,14 +39,17 @@ export default function AddFood() {
     try {
       const adminId = user?.id || user?._id;
 
-      const res = await fetch("http://localhost:5050/api/foods", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-id": adminId,   // ⭐ REQUIRED BY BACKEND
-        },
-        body: JSON.stringify(formData),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/foods`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-id": adminId,   // ⭐ REQUIRED BY BACKEND
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       const data = await res.json();
 

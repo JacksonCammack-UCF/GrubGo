@@ -28,7 +28,9 @@ export default function EditFood() {
   useEffect(() => {
     const fetchFood = async () => {
       try {
-        const res = await fetch(`http://localhost:5050/api/foods/${id}`);
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/foods/${id}`
+        );
         const data = await res.json();
 
         if (!res.ok || !data.success) {
@@ -76,14 +78,17 @@ export default function EditFood() {
     try {
       const adminId = user?.id || user?._id;
 
-      const res = await fetch(`http://localhost:5050/api/foods/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-id": adminId,        // ⭐ REQUIRED BY BACKEND
-        },
-        body: JSON.stringify(food),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/foods/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-id": adminId,        // ⭐ REQUIRED BY BACKEND
+          },
+          body: JSON.stringify(food),
+        }
+      );
 
       const data = await res.json();
 

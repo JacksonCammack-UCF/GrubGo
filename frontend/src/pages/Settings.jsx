@@ -15,19 +15,19 @@ export default function Settings() {
   const [saveMsg, setSaveMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ⭐ NEW: Sync user data from backend → ensures "points" always loads
+  // ⭐ Load fresh user profile from backend (ensures points sync)
   useEffect(() => {
     const loadFreshUser = async () => {
       if (!user) return;
 
       try {
         const res = await fetch(
-          `http://localhost:5050/api/users/${user.id || user._id}`
+          `${import.meta.env.VITE_API_URL}/users/${user.id || user._id}`
         );
         const data = await res.json();
 
         if (res.ok && data.success) {
-          updateUser(data.data); // ⭐ merge fresh user into local auth
+          updateUser(data.data); // ⭐ merge fresh user info
         }
       } catch (err) {
         console.log("Could not refresh user profile:", err.message);
@@ -49,7 +49,7 @@ export default function Settings() {
       setSaveMsg("");
 
       const res = await fetch(
-        `http://localhost:5050/api/users/profile/${user.id || user._id}`,
+        `${import.meta.env.VITE_API_URL}/users/profile/${user.id || user._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -63,7 +63,7 @@ export default function Settings() {
         throw new Error(data.message || "Failed to update profile.");
       }
 
-      // ⭐ Update local user with full data from backend
+      // ⭐ Update local user
       updateUser({ ...user, firstName });
 
       setSaveMsg("Saved successfully!");
@@ -83,9 +83,9 @@ export default function Settings() {
       <div className="pt-28 px-6 max-w-3xl mx-auto pb-20">
         <h1 className="text-4xl font-bold mb-8 text-gray-800">Settings</h1>
 
-        {/* ==============================
-            ACCOUNT INFORMATION
-        =============================== */}
+        {/* ============================== */}
+        {/*        ACCOUNT INFORMATION      */}
+        {/* ============================== */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,7 +106,7 @@ export default function Settings() {
             />
           </label>
 
-          {/* Email (read only) */}
+          {/* Email (Read Only) */}
           <div className="mb-4">
             <p className="text-gray-600 mb-1">Email</p>
             <p className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700">
@@ -131,9 +131,9 @@ export default function Settings() {
           )}
         </motion.div>
 
-        {/* ==============================
-            ACCOUNT DETAILS (READ ONLY)
-        =============================== */}
+        {/* ============================== */}
+        {/*        ACCOUNT DETAILS          */}
+        {/* ============================== */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

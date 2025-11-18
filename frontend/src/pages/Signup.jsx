@@ -18,23 +18,24 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5050/api/users/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/users/signup`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
+      );
 
       const data = await response.json();
 
@@ -43,13 +44,8 @@ export default function Signup() {
         return;
       }
 
-      // At this point, backend did:
-      // - created user
-      // - sent EMAIL_VERIFICATION OTP
-      // and returned { success: true, status: "PENDING", data: { userId, email, ... } }
-
+      // Backend sends EMAIL_VERIFICATION OTP
       if (data.status === "PENDING" && data.data?.userId) {
-        // Go to verify-email page, pass userId & email in route state
         navigate("/verify-email", {
           state: {
             userId: data.data.userId,
@@ -57,8 +53,7 @@ export default function Signup() {
           },
         });
       } else {
-        // fallback
-        alert("Signup succeeded, but OTP flow did not return expected data.");
+        alert("Signup succeeded, but OTP data was missing.");
       }
     } catch (err) {
       console.error("Signup error:", err);
@@ -68,11 +63,9 @@ export default function Signup() {
 
   return (
     <div className="relative min-h-screen bg-gray-50">
-      {/* Navbar & Sidebar */}
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
-      {/* Signup Form Section */}
       <div className="flex items-center justify-center pt-32 px-4">
         <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
           <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
@@ -80,7 +73,6 @@ export default function Signup() {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-
             {/* First Name */}
             <div>
               <label className="block text-gray-700 font-medium mb-1">
@@ -92,14 +84,15 @@ export default function Signup() {
                 value={formData.firstName}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                focus:ring-2 focus:ring-yellow-400"
               />
             </div>
 
             {/* Last Name */}
             <div>
               <label className="block text-gray-700 font-medium mb-1">
-                Last Last
+                Last Name
               </label>
               <input
                 type="text"
@@ -107,7 +100,8 @@ export default function Signup() {
                 value={formData.lastName}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                focus:ring-2 focus:ring-yellow-400"
               />
             </div>
 
@@ -122,7 +116,8 @@ export default function Signup() {
                 value={formData.username}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                focus:ring-2 focus:ring-yellow-400"
               />
             </div>
 
@@ -137,7 +132,8 @@ export default function Signup() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                focus:ring-2 focus:ring-yellow-400"
               />
             </div>
 
@@ -152,7 +148,8 @@ export default function Signup() {
                 value={formData.phone}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+                focus:ring-2 focus:ring-yellow-400"
               />
             </div>
 
@@ -161,7 +158,10 @@ export default function Signup() {
               <label className="block text-gray-700 font-medium mb-1">
                 Password
               </label>
-              <div className="flex items-center border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-yellow-400">
+              <div
+                className="flex items-center border border-gray-300 rounded-lg 
+                focus-within:ring-2 focus-within:ring-yellow-400"
+              >
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
@@ -173,7 +173,7 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="px-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  className="px-3 text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? "Hide" : "Show"}
                 </button>
@@ -183,7 +183,8 @@ export default function Signup() {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition"
+              className="w-full py-3 bg-black text-white rounded-lg font-semibold 
+              hover:bg-gray-800 transition"
             >
               Sign Up
             </button>
