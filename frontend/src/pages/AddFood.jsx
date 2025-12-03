@@ -39,17 +39,14 @@ export default function AddFood() {
     try {
       const adminId = user?.id || user?._id;
 
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/foods`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-admin-id": adminId,   // ⭐ REQUIRED BY BACKEND
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/foods`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-id": adminId, // ⭐ REQUIRED BY BACKEND
+        },
+        body: JSON.stringify(formData),
+      });
 
       const data = await res.json();
 
@@ -61,7 +58,6 @@ export default function AddFood() {
       setSuccessMsg("Food item added successfully!");
 
       setTimeout(() => navigate("/admin"), 1000);
-
     } catch (error) {
       console.error("Error adding food:", error);
       setError("Server error. Try again.");
@@ -117,15 +113,19 @@ export default function AddFood() {
           </div>
 
           <div>
-            <label className="font-medium text-gray-700">Image URL</label>
+            <label className="font-medium text-gray-700">Image Filename</label>
             <input
               type="text"
               name="imageUrl"
+              placeholder="e.g. cole_slaw.jpg"
               required
               value={formData.imageUrl}
               onChange={handleChange}
               className="w-full mt-1 px-4 py-2 border rounded-lg"
             />
+            <p className="text-sm text-gray-500 mt-1">
+              Place images in <code>/public/img</code> and enter just the filename.
+            </p>
           </div>
 
           <div className="flex items-center space-x-2">

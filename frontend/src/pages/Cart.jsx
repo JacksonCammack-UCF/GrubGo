@@ -16,9 +16,8 @@ export default function Cart() {
 
   const navigate = useNavigate();
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
-  const { user, isAuthenticated, authLoading } = useAuth();
+  const { isAuthenticated, authLoading } = useAuth();
 
-  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
 
   // -------------------------------------------------
@@ -31,54 +30,37 @@ export default function Cart() {
   }, [authLoading, isAuthenticated, navigate]);
 
   // -------------------------------------------------
-  // CHECKOUT HANDLER
+  // IMAGE URL NORMALIZER (same logic style as Menu)
   // -------------------------------------------------
-  const handleCheckout = async () => {
-    if (authLoading) {
-      setCheckoutError("Restoring your session… try again.");
-      return;
+  const getImageSrc = (item) => {
+    const raw = item?.imageUrl;
+
+    if (!raw) return "/img/default-food.jpg";
+
+    if (raw.startsWith("http://") || raw.startsWith("https://")) {
+      return raw;
     }
 
-    if (!user?.id) {
-      setCheckoutError("Invalid user. Please log in again.");
-      return navigate("/login");
+    if (raw.startsWith("/img/")) {
+      return raw;
     }
+
+    // treat as filename like "cole_slaw.jpg"
+    return `/img/${raw.replace(/^\/+/, "")}`;
+  };
+
+  // -------------------------------------------------
+  // CHECKOUT HANDLER → routes to /checkout
+  // -------------------------------------------------
+  const handleCheckout = () => {
+    setCheckoutError("");
 
     if (cart.length === 0) {
       setCheckoutError("Your cart is empty.");
       return;
     }
 
-    try {
-      setIsCheckoutLoading(true);
-      setCheckoutError("");
-
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/orders/${user.id}`,
-        {
-          method: "POST",
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Checkout failed.");
-      }
-
-      const orderId = data.order?._id;
-      if (!orderId) {
-        throw new Error("Order ID missing in response.");
-      }
-
-      clearCart();
-      navigate(`/order-success/${orderId}`);
-    } catch (err) {
-      console.error("Checkout error:", err);
-      setCheckoutError(err.message || "Server error during checkout.");
-    } finally {
-      setIsCheckoutLoading(false);
-    }
+    navigate("/checkout");
   };
 
   // -------------------------------------------------
@@ -149,9 +131,12 @@ export default function Cart() {
                   className="bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition flex gap-4"
                 >
                   <img
-                    src={item.imageUrl}
+                    src={getImageSrc(item)}
                     alt={item.name || "Food"}
                     className="w-28 h-28 object-cover rounded-xl"
+                    onError={(e) => {
+                      e.currentTarget.src = "/img/default-food.jpg";
+                    }}
                   />
 
                   <div className="flex-1 flex flex-col justify-between">
@@ -236,10 +221,9 @@ export default function Cart() {
 
             <button
               onClick={handleCheckout}
-              disabled={isCheckoutLoading}
-              className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition disabled:bg-gray-500"
+              className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition"
             >
-              {isCheckoutLoading ? "Processing..." : "Checkout"}
+              Proceed to Checkout
             </button>
 
             {checkoutError && (

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
@@ -74,12 +74,14 @@ export default function Login() {
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
-      <div className="flex items-center justify-center pt-32 px-4">
-        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
-          
-          <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
-            Log In
+      <div className="flex items-center justify-center pt-32 px-4 pb-12">
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+          <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">
+            Welcome back
           </h2>
+          <p className="text-sm text-gray-500 mb-6 text-center">
+            Log in to continue ordering with GrubGo.
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Identifier */}
@@ -93,9 +95,10 @@ export default function Login() {
                 value={formData.identifier}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-                focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="Required"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400
+                  text-sm"
+                placeholder="Enter your email or username"
               />
             </div>
 
@@ -104,48 +107,61 @@ export default function Login() {
               <label className="block text-gray-700 font-medium mb-1">
                 Password
               </label>
-              <div className="flex items-center border border-gray-300 rounded-lg 
-                focus-within:ring-2 focus-within:ring-yellow-400">
+              <div
+                className="flex items-center border border-gray-300 rounded-lg
+                  focus-within:ring-2 focus-within:ring-yellow-400 focus-within:border-yellow-400"
+              >
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 rounded-l-lg focus:outline-none"
-                  placeholder="Required"
+                  className="w-full px-4 py-2 rounded-l-lg focus:outline-none text-sm"
+                  placeholder="Enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="px-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  className="px-3 text-xs font-medium text-gray-500 hover:text-gray-700 focus:outline-none"
                 >
                   {showPassword ? "Hide" : "Show"}
                 </button>
+              </div>
+
+              {/* ⭐ Subtle forgot-password link, right-aligned */}
+              <div className="mt-2 flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-gray-500 hover:text-yellow-600 hover:underline transition-colors"
+                >
+                  Forgot your password?
+                </Link>
               </div>
             </div>
 
             {/* Error */}
             {error && (
-              <p className="text-red-600 text-center text-sm">{error}</p>
+              <p className="text-red-600 text-center text-sm bg-red-50 border border-red-100 rounded-lg py-2 px-3">
+                {error}
+              </p>
             )}
 
             <button
               type="submit"
-              className="w-full py-3 bg-black text-white rounded-lg font-semibold 
-              hover:bg-gray-800 transition"
+              className="w-full py-3 bg-black text-white rounded-lg font-semibold
+                hover:bg-gray-800 transition shadow-sm hover:shadow-md text-sm"
             >
               Log In
             </button>
           </form>
 
-          <p className="mt-4 text-center text-gray-600">
+          <p className="mt-6 text-center text-sm text-gray-600">
             Don’t have an account?{" "}
-            <a href="/signup" className="text-yellow-600 hover:underline">
-              Sign Up
-            </a>
+            <Link to="/signup" className="text-yellow-600 hover:underline">
+              Sign up
+            </Link>
           </p>
-
         </div>
       </div>
     </div>

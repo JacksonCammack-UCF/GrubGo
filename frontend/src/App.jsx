@@ -32,7 +32,7 @@ export default function App() {
       <div className="relative w-full h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-90 transition-opacity duration-1000 ease-in"
-          style={{ backgroundImage: "url('/img/hero-image.png')" }}
+          style={{ backgroundImage: "url('/img/hero-image.webp')" }}
         ></div>
 
         <div className="absolute inset-0 bg-black/30"></div>
@@ -73,7 +73,7 @@ export default function App() {
           {/* View Menu */}
           <div className="flex-1 bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition cursor-pointer">
             <img
-              src="/img/driver.png"
+              src="/img/driver.webp"
               alt="View Menu"
               className="mx-auto h-32 w-32 object-contain mb-4"
             />
@@ -90,7 +90,7 @@ export default function App() {
           {/* About Us */}
           <div className="flex-1 bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition cursor-pointer">
             <img
-              src="/img/vendor.png"
+              src="/img/vendor.webp"
               alt="About Us"
               className="mx-auto h-32 w-32 object-contain mb-4"
             />
@@ -107,7 +107,7 @@ export default function App() {
           {/* Contact */}
           <div className="flex-1 bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition cursor-pointer">
             <img
-              src="/img/contact.png"
+              src="/img/contact.webp"
               alt="Contact Us"
               className="mx-auto h-32 w-32 object-contain mb-4"
             />

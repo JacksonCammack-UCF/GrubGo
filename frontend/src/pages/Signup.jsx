@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
@@ -20,9 +20,8 @@ export default function Signup() {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,7 +43,7 @@ export default function Signup() {
         return;
       }
 
-      // Backend sends EMAIL_VERIFICATION OTP
+      // Successfully created user → show OTP verification
       if (data.status === "PENDING" && data.data?.userId) {
         navigate("/verify-email", {
           state: {
@@ -66,11 +65,14 @@ export default function Signup() {
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
-      <div className="flex items-center justify-center pt-32 px-4">
-        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
-          <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
-            Sign Up
+      <div className="flex items-center justify-center pt-32 px-4 pb-12">
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+          <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">
+            Create your account
           </h2>
+          <p className="text-sm text-gray-500 mb-6 text-center">
+            Join GrubGo and start ordering your favorite meals.
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* First Name */}
@@ -84,8 +86,9 @@ export default function Signup() {
                 value={formData.firstName}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-                focus:ring-2 focus:ring-yellow-400"
+                placeholder="John"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
               />
             </div>
 
@@ -100,8 +103,9 @@ export default function Signup() {
                 value={formData.lastName}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-                focus:ring-2 focus:ring-yellow-400"
+                placeholder="Doe"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
               />
             </div>
 
@@ -116,8 +120,9 @@ export default function Signup() {
                 value={formData.username}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-                focus:ring-2 focus:ring-yellow-400"
+                placeholder="johndoe123"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
               />
             </div>
 
@@ -132,8 +137,9 @@ export default function Signup() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-                focus:ring-2 focus:ring-yellow-400"
+                placeholder="you@example.com"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
               />
             </div>
 
@@ -148,8 +154,9 @@ export default function Signup() {
                 value={formData.phone}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-                focus:ring-2 focus:ring-yellow-400"
+                placeholder="(555) 123-4567"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
               />
             </div>
 
@@ -159,8 +166,8 @@ export default function Signup() {
                 Password
               </label>
               <div
-                className="flex items-center border border-gray-300 rounded-lg 
-                focus-within:ring-2 focus-within:ring-yellow-400"
+                className="flex items-center border border-gray-300 rounded-lg
+                  focus-within:ring-2 focus-within:ring-yellow-400"
               >
                 <input
                   type={showPassword ? "text" : "password"}
@@ -168,12 +175,13 @@ export default function Signup() {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 rounded-l-lg focus:outline-none"
+                  placeholder="Create a strong password"
+                  className="w-full px-4 py-2 rounded-l-lg focus:outline-none text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="px-3 text-gray-500 hover:text-gray-700"
+                  className="px-3 text-xs font-medium text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? "Hide" : "Show"}
                 </button>
@@ -183,18 +191,18 @@ export default function Signup() {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 bg-black text-white rounded-lg font-semibold 
-              hover:bg-gray-800 transition"
+              className="w-full py-3 bg-black text-white rounded-lg font-semibold
+                hover:bg-gray-800 transition shadow-sm hover:shadow-md text-sm"
             >
               Sign Up
             </button>
           </form>
 
-          <p className="mt-4 text-center text-gray-600">
+          <p className="mt-6 text-center text-sm text-gray-600">
             Already have an account?{" "}
-            <a href="/login" className="text-yellow-600 hover:underline">
-              Log In
-            </a>
+            <Link to="/login" className="text-yellow-600 hover:underline">
+              Log in
+            </Link>
           </p>
         </div>
       </div>

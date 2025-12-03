@@ -68,6 +68,28 @@ export default function Menu() {
       : foods;
 
   // ==========================================================
+  // IMAGE URL NORMALIZER
+  // ==========================================================
+  const getImageSrc = (food) => {
+    const raw = food?.imageUrl;
+
+    if (!raw) return "/img/default-image.webp";
+
+    // Already full URL
+    if (raw.startsWith("http://") || raw.startsWith("https://")) {
+      return raw;
+    }
+
+    // Already points into /img
+    if (raw.startsWith("/img/")) {
+      return raw;
+    }
+
+    // Otherwise assume it's a filename like "cole_slaw.jpg"
+    return `/img/${raw.replace(/^\/+/, "")}`;
+  };
+
+  // ==========================================================
   // ADD TO CART
   // ==========================================================
   const handleAdd = (food) => {
@@ -117,9 +139,13 @@ export default function Menu() {
               >
                 <div className="relative h-48">
                   <img
-                    src={food.imageUrl || "/img/default-food.jpg"}
+                    src={getImageSrc(food)}
                     alt={food.name}
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      // Fallback to default if the file is missing
+                      e.currentTarget.src = "/img/default-food.jpg";
+                    }}
                   />
                 </div>
 
