@@ -90,7 +90,7 @@ class _CartScreenState extends State<CartScreen> {
                 String image = item["imageUrl"] ?? "";
                 if (image.isNotEmpty && !image.startsWith("http")) {
                   image =
-                  "http://10.0.2.2:5050/images/menu/$image";
+                  "http://cop4331-team10.com/img/$image";
                 }
 
                 return Container(

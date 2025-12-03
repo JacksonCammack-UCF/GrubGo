@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'global_data.dart';
 
 class APIService {
-  static const String baseURL = "http://10.0.2.2:5050/api";
+  static const String baseURL = "http://cop4331-team10.com/api";
 
   // SIGNUP
   static Future<Map<String, dynamic>?> signup(Map<String, dynamic> body) async {
@@ -111,9 +111,18 @@ class APIService {
     final url = Uri.parse("$baseURL/foods/$foodId");
 
     try {
-      final res = await http.delete(url);
+      final res = await http.delete(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-id": GlobalData.userId,
+        },
+      );
+
+      print("DELETE /foods/$foodId -> ${res.statusCode} ${res.body}");
       return res.statusCode == 200;
     } catch (e) {
+      print("deleteFood error: $e");
       return false;
     }
   }
@@ -225,14 +234,19 @@ class APIService {
     try {
       final res = await http.put(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-id": GlobalData.userId,
+        },
         body: jsonEncode({"inStock": inStock}),
       );
+
+      print("PUT /foods/$foodId -> ${res.statusCode} ${res.body}");
       return res.statusCode == 200;
-    } catch (_) {
+    } catch (e) {
+      print("setFoodStock error: $e");
       return false;
     }
   }
-
 
 }
