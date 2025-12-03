@@ -144,7 +144,7 @@ export default function Menu() {
                     className="h-full w-full object-cover"
                     onError={(e) => {
                       // Fallback to default if the file is missing
-                      e.currentTarget.src = "/img/default-food.jpg";
+                      e.currentTarget.src = "/img/default-image.webp";
                     }}
                   />
                 </div>

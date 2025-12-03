@@ -19,7 +19,42 @@ export default function Checkout() {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
 
-  // Simple payment form state (front-end only)
+  // ------------------------------
+  // BILLING FORM (front-end only)
+  // ------------------------------
+  const [billingForm, setBillingForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    zip: "",
+  });
+
+  // Prefill from user if available
+  useEffect(() => {
+    if (!user) return;
+
+    setBillingForm((prev) => ({
+      ...prev,
+      fullName:
+        prev.fullName ||
+        [user.firstName, user.lastName].filter(Boolean).join(" "),
+      email: prev.email || user.email || "",
+      phone: prev.phone || user.phone || "",
+    }));
+  }, [user]);
+
+  const handleBillingChange = (e) => {
+    const { name, value } = e.target;
+    setBillingForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // ------------------------------
+  // PAYMENT FORM (front-end only)
+  // ------------------------------
   const [paymentForm, setPaymentForm] = useState({
     nameOnCard: "",
     cardNumber: "",
@@ -57,6 +92,45 @@ export default function Checkout() {
   // FORM VALIDATION (frontend only)
   // -------------------------------------------------
   const validatePaymentForm = () => {
+    // Billing
+    const {
+      fullName,
+      email,
+      addressLine1,
+      city,
+      state,
+      zip,
+    } = billingForm;
+
+    if (!fullName.trim()) {
+      return "Please enter your full name for billing.";
+    }
+
+    if (!email.trim()) {
+      return "Please enter your email address.";
+    }
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+      return "Please enter a valid email address.";
+    }
+
+    if (!addressLine1.trim()) {
+      return "Please enter your billing street address.";
+    }
+
+    if (!city.trim()) {
+      return "Please enter your city.";
+    }
+
+    if (!state.trim()) {
+      return "Please enter your state.";
+    }
+
+    if (!zip.trim()) {
+      return "Please enter your ZIP/postal code.";
+    }
+
+    // Payment
     const { nameOnCard, cardNumber, expiry, cvv } = paymentForm;
 
     if (!nameOnCard.trim()) {
@@ -68,7 +142,6 @@ export default function Checkout() {
       return "Please enter a valid card number.";
     }
 
-    // Basic MM/YY or MM/YYYY check
     if (!/^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$/.test(expiry.trim())) {
       return "Please enter expiry as MM/YY or MM/YYYY.";
     }
@@ -113,7 +186,7 @@ export default function Checkout() {
         `${import.meta.env.VITE_API_URL}/orders/${user.id}`,
         {
           method: "POST",
-          // If you later want to send payment data, add body here.
+          // If you later want to send billing/payment data, add body here.
         }
       );
 
@@ -157,15 +230,15 @@ export default function Checkout() {
       <Navbar onMenuClick={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
 
-      <div className="pt-28 px-6 max-w-5xl mx-auto pb-20">
+      <div className="pt-28 px-6 max-w-3xl mx-auto pb-20">
         <h1 className="text-4xl font-bold mb-6 text-gray-800">Checkout</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="space-y-8">
           {/* ORDER SUMMARY */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="lg:col-span-2 bg-white rounded-2xl shadow-md p-6"
+            className="bg-white rounded-2xl shadow-md p-6"
           >
             <h2 className="text-2xl font-semibold mb-4 text-gray-800">
               Order Summary
@@ -238,75 +311,217 @@ export default function Checkout() {
             )}
           </motion.div>
 
-          {/* PAYMENT DETAILS */}
+          {/* BILLING & PAYMENT */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-2xl shadow-md p-6"
           >
             <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-              Payment Details
+              Billing & Payment
             </h2>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 font-medium mb-1 text-sm">
-                  Name on Card
-                </label>
-                <input
-                  type="text"
-                  name="nameOnCard"
-                  value={paymentForm.nameOnCard}
-                  onChange={handlePaymentChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
-                  placeholder="John Doe"
-                />
-              </div>
+            <div className="space-y-5">
+              {/* BILLING INFO */}
+              <div className="border-b pb-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Billing Information
+                </h3>
 
-              <div>
-                <label className="block text-gray-700 font-medium mb-1 text-sm">
-                  Card Number
-                </label>
-                <input
-                  type="text"
-                  name="cardNumber"
-                  value={paymentForm.cardNumber}
-                  onChange={handlePaymentChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
-                  placeholder="1234 5678 9012 3456"
-                />
-              </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-1 text-sm">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={billingForm.fullName}
+                      onChange={handleBillingChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                        focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                      placeholder="John Doe"
+                    />
+                  </div>
 
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-gray-700 font-medium mb-1 text-sm">
-                    Expiry (MM/YY)
-                  </label>
-                  <input
-                    type="text"
-                    name="expiry"
-                    value={paymentForm.expiry}
-                    onChange={handlePaymentChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg
-                      focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
-                    placeholder="08/27"
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-1 text-sm">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={billingForm.email}
+                        onChange={handleBillingChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                          focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                        placeholder="john@example.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-1 text-sm">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={billingForm.phone}
+                        onChange={handleBillingChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                          focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                        placeholder="(555) 555-5555"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-1 text-sm">
+                      Address Line 1
+                    </label>
+                    <input
+                      type="text"
+                      name="addressLine1"
+                      value={billingForm.addressLine1}
+                      onChange={handleBillingChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                        focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                      placeholder="123 Main St"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-1 text-sm">
+                      Address Line 2 (optional)
+                    </label>
+                    <input
+                      type="text"
+                      name="addressLine2"
+                      value={billingForm.addressLine2}
+                      onChange={handleBillingChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                        focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                      placeholder="Apt, suite, etc."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-1 text-sm">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={billingForm.city}
+                        onChange={handleBillingChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                          focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                        placeholder="Orlando"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-1 text-sm">
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        name="state"
+                        value={billingForm.state}
+                        onChange={handleBillingChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                          focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                        placeholder="FL"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-1 text-sm">
+                        ZIP
+                      </label>
+                      <input
+                        type="text"
+                        name="zip"
+                        value={billingForm.zip}
+                        onChange={handleBillingChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                          focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                        placeholder="32816"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="w-24">
-                  <label className="block text-gray-700 font-medium mb-1 text-sm">
-                    CVV
-                  </label>
-                  <input
-                    type="password"
-                    name="cvv"
-                    value={paymentForm.cvv}
-                    onChange={handlePaymentChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg
-                      focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
-                    placeholder="123"
-                  />
+              </div>
+
+              {/* PAYMENT DETAILS */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Payment Details
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-1 text-sm">
+                      Name on Card
+                    </label>
+                    <input
+                      type="text"
+                      name="nameOnCard"
+                      value={paymentForm.nameOnCard}
+                      onChange={handlePaymentChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                        focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                      placeholder="John Doe"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-1 text-sm">
+                      Card Number
+                    </label>
+                    <input
+                      type="text"
+                      name="cardNumber"
+                      value={paymentForm.cardNumber}
+                      onChange={handlePaymentChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                        focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                      placeholder="1234 5678 9012 3456"
+                    />
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <label className="block text-gray-700 font-medium mb-1 text-sm">
+                        Expiry (MM/YY)
+                      </label>
+                      <input
+                        type="text"
+                        name="expiry"
+                        value={paymentForm.expiry}
+                        onChange={handlePaymentChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                          focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                        placeholder="08/27"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-gray-700 font-medium mb-1 text-sm">
+                        CVV
+                      </label>
+                      <input
+                        type="password"
+                        name="cvv"
+                        value={paymentForm.cvv}
+                        onChange={handlePaymentChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                          focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                        placeholder="123"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
